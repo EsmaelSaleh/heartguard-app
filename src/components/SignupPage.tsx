@@ -2,17 +2,33 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { brandAssets, signupPageData } from '../data/mockData';
+import { useAuth } from '../context/AuthContext';
 
 export interface SignupPageProps {}
 
 const SignupPage: React.FC<SignupPageProps> = () => {
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
+  const { signup } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Navigate to Onboarding flow after sign up
-    navigate('/onboarding/welcome');
+    setError('');
+    setIsLoading(true);
+    try {
+      await signup(email, password, fullName);
+      navigate('/onboarding/welcome');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -32,14 +48,13 @@ const SignupPage: React.FC<SignupPageProps> = () => {
       </header>
 
       <main className="flex-1 flex items-center justify-center p-6 relative overflow-hidden">
-        {/* Abstract Background Decorative Elements */}
         <div className="absolute top-[-10%] left-[-5%] w-72 h-72 bg-accent-pink/30 rounded-full blur-3xl opacity-60"></div>
         <div className="absolute bottom-[-10%] right-[-5%] w-96 h-96 bg-primary/5 rounded-full blur-3xl opacity-60"></div>
-        
+
         <div className="w-full max-w-[1100px] grid lg:grid-cols-2 gap-12 items-center relative z-10">
-          
+
           {/* Left Side: Content */}
-          <motion.div 
+          <motion.div
             className="hidden lg:flex flex-col gap-8"
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
@@ -77,7 +92,7 @@ const SignupPage: React.FC<SignupPageProps> = () => {
           </motion.div>
 
           {/* Right Side: Sign Up Form */}
-          <motion.div 
+          <motion.div
             className="bg-white dark:bg-slate-900 p-8 md:p-10 rounded-2xl shadow-xl shadow-primary/5 border border-slate-100 dark:border-slate-800 w-full max-w-md mx-auto"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -87,23 +102,44 @@ const SignupPage: React.FC<SignupPageProps> = () => {
               <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Create Account</h2>
               <p className="text-slate-500 dark:text-slate-400 mt-2">Start your 30-day free trial today.</p>
             </div>
-            
+
+            {error && (
+              <div className="mb-5 flex items-center gap-3 px-4 py-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
+                <span className="material-symbols-outlined text-red-500 text-xl shrink-0">error</span>
+                <p className="text-sm text-red-700 dark:text-red-400 font-medium">{error}</p>
+              </div>
+            )}
+
             <form className="space-y-5" onSubmit={handleSubmit}>
               {/* Full Name */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Full Name</label>
                 <div className="relative">
                   <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">person</span>
-                  <input required className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-slate-900 dark:text-white" placeholder="John Doe" type="text" />
+                  <input
+                    required
+                    value={fullName}
+                    onChange={e => setFullName(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-slate-900 dark:text-white"
+                    placeholder="John Doe"
+                    type="text"
+                  />
                 </div>
               </div>
-              
+
               {/* Email Address */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Email Address</label>
                 <div className="relative">
                   <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">mail</span>
-                  <input required className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-slate-900 dark:text-white" placeholder="john@example.com" type="email" />
+                  <input
+                    required
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-slate-900 dark:text-white"
+                    placeholder="john@example.com"
+                    type="email"
+                  />
                 </div>
               </div>
 
@@ -112,13 +148,21 @@ const SignupPage: React.FC<SignupPageProps> = () => {
                 <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Password</label>
                 <div className="relative">
                   <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">lock</span>
-                  <input required className="w-full pl-12 pr-12 py-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-slate-900 dark:text-white" placeholder="••••••••" type={showPassword ? "text" : "password"} />
-                  <button 
+                  <input
+                    required
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    className="w-full pl-12 pr-12 py-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-slate-900 dark:text-white"
+                    placeholder="Min. 8 characters"
+                    type={showPassword ? 'text' : 'password'}
+                    minLength={8}
+                  />
+                  <button
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors" 
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
                     type="button"
                   >
-                    <span className="material-symbols-outlined text-xl">{showPassword ? "visibility_off" : "visibility"}</span>
+                    <span className="material-symbols-outlined text-xl">{showPassword ? 'visibility_off' : 'visibility'}</span>
                   </button>
                 </div>
               </div>
@@ -134,21 +178,33 @@ const SignupPage: React.FC<SignupPageProps> = () => {
               </div>
 
               {/* Submit Button */}
-              <button className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/25 transition-all active:scale-[0.98] flex items-center justify-center gap-2 group" type="submit">
-                <span>Create Account</span>
-                <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+              <button
+                disabled={isLoading}
+                className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/25 transition-all active:scale-[0.98] flex items-center justify-center gap-2 group disabled:opacity-60 disabled:cursor-not-allowed"
+                type="submit"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                    <span>Creating Account...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Create Account</span>
+                    <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                  </>
+                )}
               </button>
             </form>
 
             <p className="text-center mt-8 text-sm text-slate-500 dark:text-slate-400">
-              Already have an account? 
+              Already have an account?
               <Link to="/login" className="text-primary font-bold hover:underline ml-1">Sign in</Link>
             </p>
           </motion.div>
         </div>
       </main>
 
-      {/* Simple Footer */}
       <footer className="p-8 text-center text-slate-400 dark:text-slate-600 text-sm">
         <p>© 2024 HeartGuard Technologies. All rights reserved.</p>
       </footer>

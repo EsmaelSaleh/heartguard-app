@@ -1,5 +1,6 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import LandingPage from './components/LandingPage';
 import SignupPage from './components/SignupPage';
 import LoginPage from './components/LoginPage';
@@ -14,26 +15,55 @@ import DashboardPage from './components/DashboardPage';
 import RiskReportPage from './components/RiskReportPage';
 import ChatbotPage from './components/ChatbotPage';
 
+function LoadingSpinner() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950">
+      <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent" />
+    </div>
+  );
+}
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) return <LoadingSpinner />;
+  if (!user) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
+function GuestRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) return <LoadingSpinner />;
+  if (user) return <Navigate to="/dashboard" replace />;
+  return <>{children}</>;
+}
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/signup" element={<GuestRoute><SignupPage /></GuestRoute>} />
+      <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
+      <Route path="/onboarding/welcome" element={<ProtectedRoute><OnboardingWelcomePage /></ProtectedRoute>} />
+      <Route path="/onboarding/basic-info" element={<ProtectedRoute><OnboardingBasicInfoPage /></ProtectedRoute>} />
+      <Route path="/onboarding/lifestyle" element={<ProtectedRoute><OnboardingLifestylePage /></ProtectedRoute>} />
+      <Route path="/onboarding/medical-history" element={<ProtectedRoute><OnboardingMedicalHistoryPage /></ProtectedRoute>} />
+      <Route path="/risk-assessment/vitals" element={<ProtectedRoute><RiskAssessmentVitalsPage /></ProtectedRoute>} />
+      <Route path="/risk-assessment/ecg" element={<ProtectedRoute><RiskAssessmentEcgPage /></ProtectedRoute>} />
+      <Route path="/dashboard" element={<ProtectedRoute><EmptyDashboardPage /></ProtectedRoute>} />
+      <Route path="/dashboard-results" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+      <Route path="/risk-report" element={<ProtectedRoute><RiskReportPage /></ProtectedRoute>} />
+      <Route path="/chatbot" element={<ProtectedRoute><ChatbotPage /></ProtectedRoute>} />
+      <Route path="*" element={<LandingPage />} />
+    </Routes>
+  );
+}
+
 const App: React.FC = () => {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/onboarding/welcome" element={<OnboardingWelcomePage />} />
-        <Route path="/onboarding/basic-info" element={<OnboardingBasicInfoPage />} />
-        <Route path="/onboarding/lifestyle" element={<OnboardingLifestylePage />} />
-        <Route path="/onboarding/medical-history" element={<OnboardingMedicalHistoryPage />} />
-        <Route path="/risk-assessment/vitals" element={<RiskAssessmentVitalsPage />} />
-        <Route path="/risk-assessment/ecg" element={<RiskAssessmentEcgPage />} />
-        <Route path="/dashboard" element={<EmptyDashboardPage />} />
-        <Route path="/dashboard-results" element={<DashboardPage />} />
-        <Route path="/risk-report" element={<RiskReportPage />} />
-        <Route path="/chatbot" element={<ChatbotPage />} />
-        {/* We will add more routes here as we build them */}
-        <Route path="*" element={<LandingPage />} />
-      </Routes>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
     </BrowserRouter>
   );
 };
