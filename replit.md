@@ -77,13 +77,36 @@ Chatbot conversation history.
 ## Build Order
 
 1. ✅ Database — schema designed and provisioned
-2. 🔲 Backend — Express API server (auth, assessments, chatbot endpoints)
+2. ✅ Backend — Express API server (auth, assessments, chatbot endpoints)
 3. 🔲 Signup / Login — wire existing UI to real auth endpoints
+
+## API Endpoints
+
+All routes are prefixed `/api/` and proxied from Vite's dev server (port 5000) to Express (port 3001).
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/auth/signup` | — | Create account, sets session cookie |
+| POST | `/api/auth/login` | — | Log in, sets session cookie |
+| POST | `/api/auth/logout` | ✓ | Destroys session cookie |
+| GET | `/api/auth/me` | ✓ | Returns current user |
+| GET | `/api/onboarding/status` | ✓ | Fetch all onboarding data |
+| PUT | `/api/onboarding/profile` | ✓ | Save gender + date_of_birth |
+| PUT | `/api/onboarding/lifestyle` | ✓ | Save cigarettes_per_day |
+| PUT | `/api/onboarding/medical-history` | ✓ | Save conditions + has_test_results |
+| POST | `/api/assessment` | ✓ | Submit vitals, returns risk score |
+| GET | `/api/assessment/latest` | ✓ | Most recent assessment |
+| GET | `/api/assessment/history` | ✓ | All past assessments |
+| GET | `/api/chat/messages` | ✓ | Fetch chat history |
+| POST | `/api/chat/message` | ✓ | Send message, get AI response |
+| DELETE | `/api/chat/messages` | ✓ | Clear chat history |
+| GET | `/api/health` | — | Server health check |
+
+Sessions use httpOnly cookies (30-day expiry). Passwords hashed with bcrypt (12 rounds).
 
 ## Running the App
 
 ```bash
-npm run dev
+npm run dev      # Frontend — Vite on port 5000
+npm run server   # Backend  — Express on port 3001
 ```
-
-Starts the Vite dev server on `http://0.0.0.0:5000`.
