@@ -6,6 +6,40 @@ import { requireAuth, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
+// POST /api/auth/register — creates account only, no session (user must log in separately)
+router.post('/register', async (req: Request, res: Response): Promise<void> => {
+  const { email, password, full_name } = req.body;
+
+  if (!email || !password) {
+    res.status(400).json({ error: 'Email and password are required' });
+    return;
+  }
+
+  if (password.length < 8) {
+    res.status(400).json({ error: 'Password must be at least 8 characters' });
+    return;
+  }
+
+  try {
+    const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
+    if (existing.rows.length > 0) {
+      res.status(409).json({ error: 'An account with this email already exists' });
+      return;
+    }
+
+    const password_hash = await bcrypt.hash(password, 12);
+    const userResult = await pool.query(
+      'INSERT INTO users (email, password_hash, full_name) VALUES ($1, $2, $3) RETURNING id, email, full_name',
+      [email.toLowerCase(), password_hash, full_name || null]
+    );
+
+    res.status(201).json({ user: userResult.rows[0] });
+  } catch (err) {
+    console.error('Register error:', err);
+    res.status(500).json({ error: 'Failed to create account' });
+  }
+});
+
 // POST /api/auth/signup
 router.post('/signup', async (req: Request, res: Response): Promise<void> => {
   const { email, password, full_name } = req.body;

@@ -22,7 +22,18 @@ const LoginPage: React.FC<LoginPageProps> = () => {
     setIsLoading(true);
     try {
       await login(email, password);
-      navigate('/dashboard');
+
+      // Check if the user has completed onboarding
+      const statusRes = await fetch('/api/onboarding/status', { credentials: 'include' });
+      const statusData = await statusRes.json();
+
+      if (!statusData.profile) {
+        // First-time user — no profile yet, send to onboarding
+        navigate('/onboarding/welcome');
+      } else {
+        // Returning user — profile exists, go to dashboard
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     } finally {
@@ -195,7 +206,7 @@ const LoginPage: React.FC<LoginPageProps> = () => {
             </div>
           </div>
 
-          <div className="absolute inset-0 z-0 opacity-[0.03] dark:opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(#083fb4 2px, transparent 2px)', backgroundSize: '32px 32px' }}></div>
+          <div className="absolute inset-0 z-0 opacity-[0.03] dark:opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(#083fb4 2px, transparent 2px)', backgroundSize: '32px 32px' }} />
         </motion.div>
       </div>
     </div>
