@@ -10,7 +10,6 @@ import OnboardingLifestylePage from './components/OnboardingLifestylePage';
 import OnboardingMedicalHistoryPage from './components/OnboardingMedicalHistoryPage';
 import RiskAssessmentVitalsPage from './components/RiskAssessmentVitalsPage';
 import RiskAssessmentEcgPage from './components/RiskAssessmentEcgPage';
-import EmptyDashboardPage from './components/EmptyDashboardPage';
 import DashboardPage from './components/DashboardPage';
 import RiskReportPage from './components/RiskReportPage';
 import ChatbotPage from './components/ChatbotPage';
@@ -49,8 +48,9 @@ function AppRoutes() {
       <Route path="/onboarding/medical-history" element={<ProtectedRoute><OnboardingMedicalHistoryPage /></ProtectedRoute>} />
       <Route path="/risk-assessment/vitals" element={<ProtectedRoute><RiskAssessmentVitalsPage /></ProtectedRoute>} />
       <Route path="/risk-assessment/ecg" element={<ProtectedRoute><RiskAssessmentEcgPage /></ProtectedRoute>} />
-      <Route path="/dashboard" element={<ProtectedRoute><EmptyDashboardPage /></ProtectedRoute>} />
-      <Route path="/dashboard-results" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+      <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+      {/* Legacy redirect — keep for any bookmarked links */}
+      <Route path="/dashboard-results" element={<Navigate to="/dashboard" replace />} />
       <Route path="/risk-report" element={<ProtectedRoute><RiskReportPage /></ProtectedRoute>} />
       <Route path="/chatbot" element={<ProtectedRoute><ChatbotPage /></ProtectedRoute>} />
       <Route path="*" element={<LandingPage />} />
