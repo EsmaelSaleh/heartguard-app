@@ -153,7 +153,7 @@ const DashboardPage: React.FC = () => {
 
       {/* Header */}
       <header className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-3 sticky top-0 z-50">
-        <div className="flex items-center gap-4 cursor-pointer" onClick={() => navigate('/')}>
+        <div className="flex items-center gap-4 cursor-pointer" onClick={() => navigate('/dashboard')}>
           <div className="flex items-center justify-center p-0 size-10">
             <img src={brandAssets.logo} alt="HeartGuard Logo" className="w-full h-full object-contain" />
           </div>

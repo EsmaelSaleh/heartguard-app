@@ -229,7 +229,7 @@ const RiskReportPage: React.FC<RiskReportPageProps> = () => {
 
       {/* Header */}
       <header className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 md:px-10 py-4 sticky top-0 z-50">
-        <div className="flex items-center gap-3 text-primary cursor-pointer" onClick={() => navigate('/')}>
+        <div className="flex items-center gap-3 text-primary cursor-pointer" onClick={() => navigate('/dashboard')}>
           <div className="size-10 flex items-center justify-center hover:scale-105 transition-transform">
             <img src={brandAssets.logo} alt="HeartGuard Logo" className="w-full h-full object-contain" />
           </div>

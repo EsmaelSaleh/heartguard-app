@@ -88,7 +88,7 @@ const RiskAssessmentEcgPage: React.FC<RiskAssessmentEcgPageProps> = () => {
 
       {/* Header */}
       <header className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 md:px-10 py-4 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
-        <div className="flex items-center gap-4 text-primary cursor-pointer" onClick={() => navigate('/')}>
+        <div className="flex items-center gap-4 text-primary cursor-pointer" onClick={() => navigate('/dashboard')}>
           <div className="size-10 flex items-center justify-center p-0">
             <img src={brandAssets.logo} alt="HeartGuard Logo" className="w-full h-full object-contain" />
           </div>

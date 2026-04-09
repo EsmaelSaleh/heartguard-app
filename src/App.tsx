@@ -39,7 +39,7 @@ function GuestRoute({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={<GuestRoute><LandingPage /></GuestRoute>} />
       <Route path="/signup" element={<GuestRoute><SignupPage /></GuestRoute>} />
       <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
       <Route path="/onboarding/welcome" element={<ProtectedRoute><OnboardingWelcomePage /></ProtectedRoute>} />
@@ -53,7 +53,7 @@ function AppRoutes() {
       <Route path="/dashboard-results" element={<Navigate to="/dashboard" replace />} />
       <Route path="/risk-report" element={<ProtectedRoute><RiskReportPage /></ProtectedRoute>} />
       <Route path="/chatbot" element={<ProtectedRoute><ChatbotPage /></ProtectedRoute>} />
-      <Route path="*" element={<LandingPage />} />
+      <Route path="*" element={<GuestRoute><LandingPage /></GuestRoute>} />
     </Routes>
   );
 }

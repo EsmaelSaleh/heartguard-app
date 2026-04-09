@@ -129,7 +129,7 @@ const ChatbotPage: React.FC<ChatbotPageProps> = () => {
       {/* Left Sidebar */}
       <aside className="w-80 flex-shrink-0 border-r border-primary/10 bg-white dark:bg-background-dark/50 hidden md:flex flex-col">
         <div className="p-6 border-b border-primary/5">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
             <div className="size-10 flex items-center justify-center">
               <img src={brandAssets.logo} alt="HeartGuard Logo" className="w-full h-full object-contain" />
             </div>
