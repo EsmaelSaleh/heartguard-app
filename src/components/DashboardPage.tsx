@@ -369,15 +369,15 @@ const DashboardPage: React.FC = () => {
                           <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">ECG Status</p>
                           <div className="flex items-baseline gap-1 mb-1">
                             <span className="text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight">
-                              {ecg ? ecg.short : (latest.ecg_file_url ? 'Uploaded' : 'Not Provided')}
+                              {ecg ? ecg.short : 'On File'}
                             </span>
                           </div>
                           {ecg && ecg.short !== ecg.detail && (
                             <p className="text-[10px] text-slate-400 leading-snug mb-2">{ecg.detail}</p>
                           )}
                         </div>
-                        <div className={`text-[10px] font-bold w-fit px-2 py-1 rounded-full uppercase ${latest.ecg_file_url ? 'text-green-600 bg-green-50 dark:bg-green-500/10' : 'text-slate-500 bg-slate-100 dark:bg-slate-800'}`}>
-                          {latest.ecg_file_url ? 'On File' : 'N/A'}
+                        <div className="text-[10px] font-bold w-fit px-2 py-1 rounded-full uppercase text-green-600 bg-green-50 dark:bg-green-500/10">
+                          On File
                         </div>
                       </div>
                     );

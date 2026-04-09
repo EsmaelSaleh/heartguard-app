@@ -393,13 +393,13 @@ const RiskReportPage: React.FC<RiskReportPageProps> = () => {
                     <div className="flex flex-col bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
                       <span className="text-slate-400 text-xs font-bold uppercase mb-2">ECG</span>
                       <span className="text-xl font-black text-slate-900 dark:text-white leading-tight mt-1">
-                        {ecg ? ecg.short : (assessment.ecg_file_url ? 'On file' : 'N/A')}
+                        {ecg ? ecg.short : 'On File'}
                       </span>
                       {ecg && ecg.short !== ecg.detail && (
                         <span className="text-[10px] text-slate-400 mt-1 leading-snug">{ecg.detail}</span>
                       )}
-                      <span className={`mt-auto pt-3 px-2 py-1 rounded-full text-[10px] font-bold w-fit uppercase ${assessment.ecg_file_url ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
-                        {assessment.ecg_file_url ? 'Uploaded' : 'Not provided'}
+                      <span className="mt-auto pt-3 px-2 py-1 rounded-full text-[10px] font-bold w-fit uppercase bg-emerald-100 text-emerald-600">
+                        Analysed
                       </span>
                     </div>
                   );
