@@ -1,57 +1,54 @@
 import { Router, Response } from 'express';
+import { InferenceClient } from '@huggingface/inference';
 import pool from '../db.js';
 import { requireAuth, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
 const HF_TOKEN = process.env.HUGGINGFACE_API_TOKEN;
-const HF_MODEL = 'mistralai/Mixtral-8x7B-Instruct-v0.1';
+const HF_MODEL = 'Qwen/Qwen2.5-72B-Instruct';
 
 const SYSTEM_PROMPT = `You are HeartGuard AI, a knowledgeable and empathetic heart health assistant. Your role is to help users understand cardiovascular health topics clearly and accurately.
 
 Guidelines:
 - Answer only heart health, cardiology, and related wellness topics (diet, exercise, stress, sleep, medications, symptoms, risk factors).
-- If a user describes an emergency (chest pain, stroke symptoms, etc.), immediately tell them to call emergency services.
+- If a user describes an emergency (chest pain, stroke symptoms, difficulty breathing, etc.), immediately and urgently tell them to call emergency services (911).
 - Be warm, supportive, and use plain language. Avoid unnecessary jargon.
-- Format responses with bullet points or short paragraphs for readability.
-- Always recommend consulting a doctor for personal medical decisions.
+- Format responses using short paragraphs or bullet points for readability.
+- Always recommend consulting a doctor or cardiologist for personal medical decisions.
 - Do NOT answer questions unrelated to health or wellness.
-- Keep responses concise but thorough — aim for 100-250 words.`;
+- Keep responses concise but thorough — aim for 150-300 words.
+- Never repeat the user's question back at them. Just answer directly.`;
 
-async function callHuggingFace(conversationHistory: { role: string; content: string }[]): Promise<string> {
+function getClient(): InferenceClient | null {
+  if (!HF_TOKEN) return null;
+  return new InferenceClient(HF_TOKEN);
+}
+
+async function callHuggingFace(
+  conversationHistory: { role: string; content: string }[]
+): Promise<string> {
+  const client = getClient();
+  if (!client) throw new Error('HUGGINGFACE_API_TOKEN not set');
+
   const messages = [
-    { role: 'system', content: SYSTEM_PROMPT },
-    ...conversationHistory,
+    { role: 'system' as const, content: SYSTEM_PROMPT },
+    ...conversationHistory.map(m => ({
+      role: m.role as 'user' | 'assistant',
+      content: m.content,
+    })),
   ];
 
-  const response = await fetch(
-    `https://router.huggingface.co/models/${HF_MODEL}/v1/chat/completions`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${HF_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: HF_MODEL,
-        messages,
-        max_tokens: 500,
-        temperature: 0.6,
-        top_p: 0.9,
-      }),
-      signal: AbortSignal.timeout(45000),
-    }
-  );
+  const completion = await client.chatCompletion({
+    model: HF_MODEL,
+    messages,
+    max_tokens: 500,
+    temperature: 0.65,
+    top_p: 0.9,
+  });
 
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`HuggingFace API error ${response.status}: ${err}`);
-  }
-
-  const data = await response.json() as { choices: Array<{ message: { content: string } }> };
-  const text = data?.choices?.[0]?.message?.content?.trim();
+  const text = completion.choices?.[0]?.message?.content?.trim();
   if (!text) throw new Error('Empty response from HuggingFace');
-
   return text;
 }
 
@@ -81,15 +78,15 @@ router.post('/message', requireAuth, async (req: AuthRequest, res: Response): Pr
   const userMessage = content.trim();
 
   try {
-    // Save user message
+    // Save user message first
     await pool.query(
       'INSERT INTO chat_messages (user_id, role, content) VALUES ($1, $2, $3)',
       [req.userId, 'user', userMessage]
     );
 
-    // Fetch recent conversation history (last 10 messages for context)
+    // Fetch recent conversation history for context (last 12 messages, oldest first)
     const historyResult = await pool.query(
-      'SELECT role, content FROM chat_messages WHERE user_id = $1 ORDER BY created_at DESC LIMIT 10',
+      'SELECT role, content FROM chat_messages WHERE user_id = $1 ORDER BY created_at DESC LIMIT 12',
       [req.userId]
     );
     const conversationHistory = historyResult.rows.reverse();
@@ -97,13 +94,15 @@ router.post('/message', requireAuth, async (req: AuthRequest, res: Response): Pr
     let assistantContent: string;
 
     if (!HF_TOKEN) {
-      assistantContent = 'The AI assistant is not configured yet. Please add the HUGGINGFACE_API_TOKEN to enable real AI responses.';
+      assistantContent =
+        'The AI assistant is not configured. Please add the HUGGINGFACE_API_TOKEN secret to enable real AI responses.';
     } else {
       try {
         assistantContent = await callHuggingFace(conversationHistory);
       } catch (aiErr) {
         console.error('HuggingFace AI error:', aiErr);
-        assistantContent = 'I\'m having trouble connecting to the AI service right now. Please try again in a moment.';
+        assistantContent =
+          "I'm having a moment of trouble reaching the AI service. Please try sending your message again — it usually resolves quickly.";
       }
     }
 
