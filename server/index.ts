@@ -1,11 +1,16 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import authRouter from './routes/auth.js';
 import onboardingRouter from './routes/onboarding.js';
 import assessmentRouter from './routes/assessment.js';
 import chatRouter from './routes/chat.js';
 import pool from './db.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const isProduction = process.env.NODE_ENV === 'production';
 
 const app = express();
 
@@ -44,10 +49,10 @@ async function runMigrations() {
     console.error('Migration error:', err);
   }
 }
-const PORT = 3001;
+const PORT = isProduction ? 5000 : 3001;
 
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? false : 'http://localhost:5000',
+  origin: isProduction ? false : 'http://localhost:5000',
   credentials: true,
 }));
 
@@ -63,8 +68,17 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// In production: serve built frontend + handle SPA routing
+if (isProduction) {
+  const distPath = path.resolve(__dirname, '../dist');
+  app.use(express.static(distPath));
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
 runMigrations().then(() => {
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`HeartGuard API running on port ${PORT}`);
+    console.log(`HeartGuard API running on port ${PORT} (${isProduction ? 'production' : 'development'})`);
   });
 });

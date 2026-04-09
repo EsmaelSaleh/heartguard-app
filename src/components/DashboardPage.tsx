@@ -100,34 +100,6 @@ function riskLabel(level: string) {
   return 'Optimal';
 }
 
-function buildTrendPath(assessments: Assessment[], width: number, height: number): string {
-  if (assessments.length < 2) return '';
-  const pts = [...assessments].reverse().slice(0, 6);
-  const n = pts.length;
-  return pts
-    .map((a, i) => {
-      const x = (i / (n - 1)) * width;
-      const y = height - (a.risk_score / 100) * height;
-      return `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
-    })
-    .join(' ');
-}
-
-function buildAreaPath(assessments: Assessment[], width: number, height: number): string {
-  if (assessments.length < 2) return '';
-  const pts = [...assessments].reverse().slice(0, 6);
-  const n = pts.length;
-  const line = pts
-    .map((a, i) => {
-      const x = (i / (n - 1)) * width;
-      const y = height - (a.risk_score / 100) * height;
-      return `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
-    })
-    .join(' ');
-  const lastX = width;
-  const firstX = 0;
-  return `${line} L ${lastX} ${height} L ${firstX} ${height} Z`;
-}
 
 function buildSmoothPath(assessments: Assessment[], width: number, height: number): string {
   const pts = [...assessments].reverse().slice(0, 6);
