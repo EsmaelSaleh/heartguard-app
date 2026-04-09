@@ -55,11 +55,15 @@ const RiskAssessmentEcgPage: React.FC<RiskAssessmentEcgPageProps> = () => {
 
   const handleSubmit = async () => {
     if (!vitals) return;
+    if (!selectedFile) {
+      setError('Please upload an ECG image to continue. The AI model requires it to complete the assessment.');
+      return;
+    }
     setError('');
     setIsSubmitting(true);
     try {
       const formData = new FormData();
-      if (selectedFile) formData.append('file', selectedFile);
+      formData.append('file', selectedFile);
       formData.append('cholesterol', String(vitals.cholesterol));
       formData.append('bmi', String(vitals.bmi));
       formData.append('heart_rate', String(vitals.heart_rate));
@@ -118,7 +122,7 @@ const RiskAssessmentEcgPage: React.FC<RiskAssessmentEcgPageProps> = () => {
             <div className="flex justify-between items-end">
               <div className="flex flex-col gap-1">
                 <span className="text-xs font-bold text-primary uppercase tracking-widest">Step 2 of 2</span>
-                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">ECG Analysis (Optional)</h3>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">ECG Analysis</h3>
               </div>
               <span className="text-sm font-semibold text-slate-500">100% Complete</span>
             </div>
@@ -171,7 +175,7 @@ const RiskAssessmentEcgPage: React.FC<RiskAssessmentEcgPageProps> = () => {
             <motion.div variants={fadeUp} className="p-6 md:p-8 border-b border-slate-100 dark:border-slate-800">
               <h1 className="text-slate-900 dark:text-slate-100 text-2xl font-bold mb-2">Upload ECG Report</h1>
               <p className="text-slate-500 text-base">
-                Optionally upload a photo of your ECG strip for inclusion in your risk profile. You can also skip this step and predict your risk now.
+                Upload a photo of your ECG strip. The AI model requires it to analyse your cardiac rhythm and produce a complete risk assessment.
               </p>
             </motion.div>
 
@@ -199,8 +203,8 @@ const RiskAssessmentEcgPage: React.FC<RiskAssessmentEcgPageProps> = () => {
                     </p>
                     <p className="text-slate-500 text-sm text-center">
                       {selectedFile
-                        ? `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB · ECG will be noted on your report`
-                        : 'Supported: JPG, PNG, PDF — Optional, max 10MB'}
+                        ? `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB · Ready for AI analysis`
+                        : 'Supported: JPG, PNG, PDF — Required, max 15MB'}
                     </p>
                   </div>
                   {!selectedFile && (
@@ -256,7 +260,7 @@ const RiskAssessmentEcgPage: React.FC<RiskAssessmentEcgPageProps> = () => {
                     </>
                   ) : (
                     <>
-                      <span>{selectedFile ? 'Predict Risk with ECG' : 'Predict Risk'}</span>
+                      <span>Predict Risk with ECG</span>
                       <span className="material-symbols-outlined">arrow_forward</span>
                     </>
                   )}

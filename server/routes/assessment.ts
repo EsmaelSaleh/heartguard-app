@@ -8,18 +8,17 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 
 
 const AI_ENDPOINT = 'https://esmael-saleh-heartguardassessment.hf.space/comprehensive_assessment';
 
-// Minimal 1×1 white PNG — used when no ECG file is uploaded
-const BLANK_PNG = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwADhQGAWjR9awAAAABJRU5ErkJggg==',
-  'base64'
-);
-
 // POST /api/assessment — submit vitals (+optional ECG) and get AI risk score
 router.post('/', requireAuth, upload.single('file'), async (req: AuthRequest, res: Response): Promise<void> => {
   const { cholesterol, bmi, heart_rate, glucose, pulse_pressure } = req.body;
 
   if (!cholesterol || !bmi || !heart_rate || !glucose || !pulse_pressure) {
     res.status(400).json({ error: 'All vitals fields are required: cholesterol, bmi, heart_rate, glucose, pulse_pressure' });
+    return;
+  }
+
+  if (!req.file) {
+    res.status(400).json({ error: 'An ECG image is required to run the assessment.' });
     return;
   }
 
@@ -69,9 +68,9 @@ router.post('/', requireAuth, upload.single('file'), async (req: AuthRequest, re
     };
 
     // Build multipart request for the AI endpoint
-    const fileBuffer = req.file ? req.file.buffer : BLANK_PNG;
-    const fileName = req.file ? req.file.originalname : 'ecg_placeholder.png';
-    const mimeType = req.file ? req.file.mimetype : 'image/png';
+    const fileBuffer = req.file.buffer;
+    const fileName = req.file.originalname;
+    const mimeType = req.file.mimetype;
 
     const formData = new FormData();
     formData.append('file', new Blob([fileBuffer], { type: mimeType }), fileName);
@@ -161,7 +160,7 @@ router.post('/', requireAuth, upload.single('file'), async (req: AuthRequest, re
       [
         req.userId,
         vitals.cholesterol, vitals.bmi, vitals.heart_rate, vitals.glucose, vitals.pulse_pressure,
-        req.file ? fileName : null,
+        fileName,
         risk_score,
         risk_level,
         aiResult?.ecg_classification ?? null,
