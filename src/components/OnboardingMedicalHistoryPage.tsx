@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { brandAssets } from '../data/mockData';
+import { useAuth } from '../context/AuthContext';
 
 export interface OnboardingMedicalHistoryPageProps {}
 
@@ -14,10 +15,15 @@ const conditionsList = [
 
 const OnboardingMedicalHistoryPage: React.FC<OnboardingMedicalHistoryPageProps> = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
   const [hasTestResults, setHasTestResults] = useState(true);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const initials = user?.full_name
+    ? user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : (user?.email?.[0] ?? '?').toUpperCase();
 
   const toggleCondition = (condition: string) => {
     setSelectedConditions(prev =>
@@ -66,9 +72,9 @@ const OnboardingMedicalHistoryPage: React.FC<OnboardingMedicalHistoryPageProps> 
               </div>
               <h2 className="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-tight">HeartGuard</h2>
             </div>
-            <button className="flex items-center justify-center rounded-full h-10 w-10 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-colors">
-              <span className="material-symbols-outlined">account_circle</span>
-            </button>
+            <div className="size-10 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center">
+              <span className="text-primary font-bold text-sm">{initials}</span>
+            </div>
           </header>
 
           <main className="flex-1 flex flex-col items-center py-8 md:py-16 px-4">
@@ -215,7 +221,7 @@ const OnboardingMedicalHistoryPage: React.FC<OnboardingMedicalHistoryPageProps> 
           </main>
 
           <footer className="py-8 px-4 text-center">
-            <p className="text-slate-400 text-xs">© 2024 HeartGuard Health. All medical data is encrypted and secure.</p>
+            <p className="text-slate-400 text-xs">© {new Date().getFullYear()} HeartGuard Health. All medical data is encrypted and secure.</p>
           </footer>
         </div>
       </div>

@@ -2,14 +2,20 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { brandAssets } from '../data/mockData';
+import { useAuth } from '../context/AuthContext';
 
 export interface OnboardingLifestylePageProps {}
 
 const OnboardingLifestylePage: React.FC<OnboardingLifestylePageProps> = () => {
   const navigate = useNavigate();
-  const [cigarettes, setCigarettes] = useState<number | ''>(8);
+  const { user } = useAuth();
+  const [cigarettes, setCigarettes] = useState<number | ''>(0);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const initials = user?.full_name
+    ? user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : (user?.email?.[0] ?? '?').toUpperCase();
 
   const handleNext = async () => {
     setError('');
@@ -48,9 +54,9 @@ const OnboardingLifestylePage: React.FC<OnboardingLifestylePageProps> = () => {
               </div>
               <h2 className="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-tight">HeartGuard</h2>
             </div>
-            <button className="flex items-center justify-center rounded-full h-10 w-10 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-colors">
-              <span className="material-symbols-outlined">account_circle</span>
-            </button>
+            <div className="size-10 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center">
+              <span className="text-primary font-bold text-sm">{initials}</span>
+            </div>
           </header>
 
           <main className="flex-1 flex flex-col items-center py-8 md:py-16 px-4">
@@ -147,6 +153,8 @@ const OnboardingLifestylePage: React.FC<OnboardingLifestylePageProps> = () => {
                         className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none"
                         placeholder="e.g. 5"
                         type="number"
+                        min="0"
+                        max="100"
                         value={cigarettes}
                         onChange={e => setCigarettes(e.target.value === '' ? '' : Number(e.target.value))}
                       />
@@ -206,7 +214,7 @@ const OnboardingLifestylePage: React.FC<OnboardingLifestylePageProps> = () => {
           </main>
 
           <footer className="py-8 px-4 text-center">
-            <p className="text-slate-400 text-xs">© 2024 HeartGuard Health. All medical data is encrypted and secure.</p>
+            <p className="text-slate-400 text-xs">© {new Date().getFullYear()} HeartGuard Health. All medical data is encrypted and secure.</p>
           </footer>
         </div>
       </div>

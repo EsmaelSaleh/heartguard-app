@@ -1,8 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
-import { Link } from 'react-router-dom'; // Keep Link
-import { onboardingWelcomeData, brandAssets } from '../data/mockData'; // Add brandAssets
+import { Link } from 'react-router-dom';
+import { brandAssets } from '../data/mockData';
+import { useAuth } from '../context/AuthContext';
 
 export interface OnboardingWelcomePageProps {}
 
@@ -12,6 +13,12 @@ const fadeUp: Variants = {
 };
 
 const OnboardingWelcomePage: React.FC<OnboardingWelcomePageProps> = () => {
+  const { user } = useAuth();
+  const firstName = user?.full_name ? user.full_name.split(' ')[0] : user?.email?.split('@')[0] ?? 'there';
+  const initials = user?.full_name
+    ? user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : (user?.email?.[0] ?? '?').toUpperCase();
+
   return (
     <div className="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen relative flex w-full flex-col overflow-x-hidden">
       
@@ -26,16 +33,15 @@ const OnboardingWelcomePage: React.FC<OnboardingWelcomePageProps> = () => {
         <div className="flex items-center gap-4">
           <div className="hidden md:flex flex-col items-end">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Account</span>
-            <span className="text-sm font-medium">Alex Johnson</span>
+            <span className="text-sm font-medium">{user?.full_name ?? user?.email ?? ''}</span>
           </div>
-          <div className="size-10 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center overflow-hidden">
-            <img className="w-full h-full object-cover" alt="User profile avatar" src={onboardingWelcomeData.userProfileImg} />
+          <div className="size-10 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center">
+            <span className="text-primary font-bold text-sm">{initials}</span>
           </div>
         </div>
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-12 md:py-20 relative">
-        {/* Subtle background decoration */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-full max-h-[600px] bg-[radial-gradient(circle_at_center,#FFD8D8_0%,transparent_70%)] dark:bg-[radial-gradient(circle_at_center,#4c1d95_0%,transparent_70%)] -z-10 opacity-40 rounded-full blur-3xl"></div>
         
         <motion.div 
@@ -59,7 +65,7 @@ const OnboardingWelcomePage: React.FC<OnboardingWelcomePageProps> = () => {
           {/* Headline */}
           <motion.div variants={fadeUp} className="space-y-4">
             <h1 className="text-4xl md:text-6xl font-black tracking-tight text-slate-900 dark:text-slate-100 leading-[1.1]">
-              Welcome to HeartGuard, <span className="text-primary">Alex!</span>
+              Welcome to HeartGuard, <span className="text-primary">{firstName}!</span>
             </h1>
             <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
               Your journey to a healthier heart starts here. We use clinical-grade AI to monitor your cardiovascular well-being and provide proactive insights for a longer, more vibrant life.
@@ -103,7 +109,7 @@ const OnboardingWelcomePage: React.FC<OnboardingWelcomePageProps> = () => {
       </main>
 
       <footer className="p-8 text-center text-slate-400 dark:text-slate-600 text-sm mt-auto">
-        <p>© 2024 HeartGuard AI Health Systems. For informational purposes only.</p>
+        <p>© {new Date().getFullYear()} HeartGuard AI Health Systems. For informational purposes only.</p>
       </footer>
     </div>
   );

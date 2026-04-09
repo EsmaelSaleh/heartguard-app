@@ -1,16 +1,22 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { avatars, brandAssets } from '../data/mockData';
+import { brandAssets } from '../data/mockData';
+import { useAuth } from '../context/AuthContext';
 
 export interface OnboardingBasicInfoPageProps {}
 
 const OnboardingBasicInfoPage: React.FC<OnboardingBasicInfoPageProps> = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [gender, setGender] = useState('male');
   const [dob, setDob] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const initials = user?.full_name
+    ? user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : (user?.email?.[0] ?? '?').toUpperCase();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,10 +50,10 @@ const OnboardingBasicInfoPage: React.FC<OnboardingBasicInfoPageProps> = () => {
             </div>
             <h2 className="text-slate-900 dark:text-slate-100 text-2xl font-bold leading-tight tracking-tight">HeartGuard</h2>
           </div>
-          <div className="flex flex-1 justify-end items-center gap-4">
+          <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-slate-500 cursor-pointer hover:text-primary transition-colors">help_outline</span>
-            <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-primary/10 overflow-hidden">
-              <img src={avatars.dashboardUser} alt="User Profile" className="w-full h-full object-cover" />
+            <div className="size-10 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center">
+              <span className="text-primary font-bold text-sm">{initials}</span>
             </div>
           </div>
         </header>
