@@ -325,6 +325,11 @@ const RiskReportPage: React.FC<RiskReportPageProps> = () => {
                 </div>
                 <div className="space-y-4 text-slate-600 dark:text-slate-300 leading-relaxed text-sm md:text-base">
                   <p>{analysisText}</p>
+                  <div className="p-4 bg-primary/5 rounded-lg border-l-4 border-primary mt-4">
+                    <p className="text-sm italic font-medium text-slate-700 dark:text-slate-200">
+                      "{assessment.medical_rec || recommendations.find(r => r.title === 'Medical')?.desc}"
+                    </p>
+                  </div>
                 </div>
 
                 {/* AI model sub-scores */}
@@ -352,7 +357,7 @@ const RiskReportPage: React.FC<RiskReportPageProps> = () => {
             {/* Metric Breakdown */}
             <motion.section variants={fadeUp}>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 px-1">Metric Breakdown</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              <div className="grid grid-cols-3 lg:grid-cols-6 gap-4">
                 {metrics.map(m => {
                   const status = getMetricStatus(m.type, m.value);
                   return (
