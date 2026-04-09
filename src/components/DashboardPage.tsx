@@ -13,9 +13,20 @@ interface Assessment {
   glucose: number;
   pulse_pressure: number;
   ecg_file_url: string | null;
+  ecg_classification: string | null;
   risk_score: number;
   risk_level: 'low' | 'moderate' | 'high';
   created_at: string;
+}
+
+function shortEcgLabel(cls: string | null): { short: string; detail: string } | null {
+  if (!cls) return null;
+  const c = cls.toLowerCase();
+  if (c.includes('history') || c.includes('hist')) return { short: 'MI History', detail: cls };
+  if (c.includes('infarction') || (c.includes('mi') && !c.includes('history'))) return { short: 'Infarction', detail: cls };
+  if (c.includes('abnormal') || c.includes('arrhythmia')) return { short: 'Arrhythmia', detail: cls };
+  if (c.includes('normal')) return { short: 'Normal', detail: cls };
+  return { short: cls, detail: cls };
 }
 
 function parseAssessment(raw: Record<string, unknown>): Assessment {
@@ -350,19 +361,27 @@ const DashboardPage: React.FC = () => {
                   })}
 
                   {/* ECG Card */}
-                  <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col justify-between hover:border-primary/30 transition-colors">
-                    <div>
-                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">ECG Status</p>
-                      <div className="flex items-baseline gap-1 mb-3">
-                        <span className="text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight">
-                          {latest.ecg_file_url ? 'Uploaded' : 'Not Provided'}
-                        </span>
+                  {(() => {
+                    const ecg = shortEcgLabel(latest.ecg_classification);
+                    return (
+                      <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col justify-between hover:border-primary/30 transition-colors">
+                        <div>
+                          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">ECG Status</p>
+                          <div className="flex items-baseline gap-1 mb-1">
+                            <span className="text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight">
+                              {ecg ? ecg.short : (latest.ecg_file_url ? 'Uploaded' : 'Not Provided')}
+                            </span>
+                          </div>
+                          {ecg && ecg.short !== ecg.detail && (
+                            <p className="text-[10px] text-slate-400 leading-snug mb-2">{ecg.detail}</p>
+                          )}
+                        </div>
+                        <div className={`text-[10px] font-bold w-fit px-2 py-1 rounded-full uppercase ${latest.ecg_file_url ? 'text-green-600 bg-green-50 dark:bg-green-500/10' : 'text-slate-500 bg-slate-100 dark:bg-slate-800'}`}>
+                          {latest.ecg_file_url ? 'On File' : 'N/A'}
+                        </div>
                       </div>
-                    </div>
-                    <div className={`text-[10px] font-bold w-fit px-2 py-1 rounded-full uppercase ${latest.ecg_file_url ? 'text-green-600 bg-green-50 dark:bg-green-500/10' : 'text-slate-500 bg-slate-100 dark:bg-slate-800'}`}>
-                      {latest.ecg_file_url ? 'On File' : 'N/A'}
-                    </div>
-                  </div>
+                    );
+                  })()}
                 </div>
               </motion.div>
             </div>
