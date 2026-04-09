@@ -5,8 +5,29 @@ import authRouter from './routes/auth.js';
 import onboardingRouter from './routes/onboarding.js';
 import assessmentRouter from './routes/assessment.js';
 import chatRouter from './routes/chat.js';
+import pool from './db.js';
 
 const app = express();
+
+// Run any pending column additions on startup
+async function runMigrations() {
+  try {
+    await pool.query(`
+      ALTER TABLE risk_assessments
+        ADD COLUMN IF NOT EXISTS ecg_classification TEXT,
+        ADD COLUMN IF NOT EXISTS tabular_risk       NUMERIC(6,4),
+        ADD COLUMN IF NOT EXISTS combined_risk_score NUMERIC(6,4),
+        ADD COLUMN IF NOT EXISTS analysis_findings  TEXT,
+        ADD COLUMN IF NOT EXISTS diet_plan          TEXT,
+        ADD COLUMN IF NOT EXISTS exercise_rec       TEXT,
+        ADD COLUMN IF NOT EXISTS lifestyle_rec      TEXT,
+        ADD COLUMN IF NOT EXISTS medical_rec        TEXT
+    `);
+    console.log('Database migration complete.');
+  } catch (err) {
+    console.error('Migration error:', err);
+  }
+}
 const PORT = 3001;
 
 app.use(cors({
@@ -26,6 +47,8 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`HeartGuard API running on port ${PORT}`);
+runMigrations().then(() => {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`HeartGuard API running on port ${PORT}`);
+  });
 });

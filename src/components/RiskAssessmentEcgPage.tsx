@@ -58,18 +58,18 @@ const RiskAssessmentEcgPage: React.FC<RiskAssessmentEcgPageProps> = () => {
     setError('');
     setIsSubmitting(true);
     try {
+      const formData = new FormData();
+      if (selectedFile) formData.append('file', selectedFile);
+      formData.append('cholesterol', String(vitals.cholesterol));
+      formData.append('bmi', String(vitals.bmi));
+      formData.append('heart_rate', String(vitals.heart_rate));
+      formData.append('glucose', String(vitals.glucose));
+      formData.append('pulse_pressure', String(vitals.pulse_pressure));
+
       const res = await fetch('/api/assessment', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          cholesterol: vitals.cholesterol,
-          bmi: vitals.bmi,
-          heart_rate: vitals.heart_rate,
-          glucose: vitals.glucose,
-          pulse_pressure: vitals.pulse_pressure,
-          ecg_file_url: selectedFile ? selectedFile.name : null,
-        }),
+        body: formData,
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to submit assessment');
@@ -252,7 +252,7 @@ const RiskAssessmentEcgPage: React.FC<RiskAssessmentEcgPageProps> = () => {
                   {isSubmitting ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                      <span>Calculating Risk...</span>
+                      <span>AI Analyzing — please wait…</span>
                     </>
                   ) : (
                     <>
