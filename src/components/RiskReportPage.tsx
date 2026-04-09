@@ -398,9 +398,6 @@ const RiskReportPage: React.FC<RiskReportPageProps> = () => {
                       {ecg && ecg.short !== ecg.detail && (
                         <span className="text-[10px] text-slate-400 mt-1 leading-snug">{ecg.detail}</span>
                       )}
-                      <span className="mt-auto pt-3 px-2 py-1 rounded-full text-[10px] font-bold w-fit uppercase bg-emerald-100 text-emerald-600">
-                        Analysed
-                      </span>
                     </div>
                   );
                 })()}
