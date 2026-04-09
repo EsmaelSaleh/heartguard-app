@@ -52,12 +52,75 @@ async function callHuggingFace(
   return text;
 }
 
-// GET /api/chat/messages — fetch full conversation history for the user
-router.get('/messages', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
+function makeTitle(firstMessage: string): string {
+  const clean = firstMessage.replace(/\s+/g, ' ').trim();
+  return clean.length > 52 ? clean.slice(0, 49) + '…' : clean;
+}
+
+// ─── SESSION ROUTES ───────────────────────────────────────────────────────────
+
+// POST /api/chat/sessions — create a new session
+router.post('/sessions', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const result = await pool.query(
-      'SELECT * FROM chat_messages WHERE user_id = $1 ORDER BY created_at ASC',
+      `INSERT INTO chat_sessions (user_id, title) VALUES ($1, 'New Conversation') RETURNING *`,
       [req.userId]
+    );
+    res.json({ session: result.rows[0] });
+  } catch (err) {
+    console.error('Create session error:', err);
+    res.status(500).json({ error: 'Failed to create session' });
+  }
+});
+
+// GET /api/chat/sessions — list all sessions for user with last message preview
+router.get('/sessions', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const result = await pool.query(
+      `SELECT
+         s.id, s.title, s.created_at, s.updated_at,
+         (SELECT content FROM chat_messages WHERE session_id = s.id ORDER BY created_at DESC LIMIT 1) AS last_message,
+         (SELECT COUNT(*) FROM chat_messages WHERE session_id = s.id) AS message_count
+       FROM chat_sessions s
+       WHERE s.user_id = $1
+       ORDER BY s.updated_at DESC`,
+      [req.userId]
+    );
+    res.json({ sessions: result.rows });
+  } catch (err) {
+    console.error('List sessions error:', err);
+    res.status(500).json({ error: 'Failed to list sessions' });
+  }
+});
+
+// DELETE /api/chat/sessions/:id — delete a session and all its messages
+router.delete('/sessions/:id', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
+  const { id } = req.params;
+  try {
+    await pool.query(
+      'DELETE FROM chat_sessions WHERE id = $1 AND user_id = $2',
+      [id, req.userId]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Delete session error:', err);
+    res.status(500).json({ error: 'Failed to delete session' });
+  }
+});
+
+// ─── MESSAGE ROUTES ───────────────────────────────────────────────────────────
+
+// GET /api/chat/messages?session_id=xxx — fetch messages for a session
+router.get('/messages', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
+  const { session_id } = req.query;
+  if (!session_id || typeof session_id !== 'string') {
+    res.status(400).json({ error: 'session_id query param is required' });
+    return;
+  }
+  try {
+    const result = await pool.query(
+      'SELECT * FROM chat_messages WHERE session_id = $1 AND user_id = $2 ORDER BY created_at ASC',
+      [session_id, req.userId]
     );
     res.json({ messages: result.rows });
   } catch (err) {
@@ -66,66 +129,88 @@ router.get('/messages', requireAuth, async (req: AuthRequest, res: Response): Pr
   }
 });
 
-// POST /api/chat/message — send a user message and receive an AI response
+// POST /api/chat/message — send a message in a session
 router.post('/message', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
-  const { content } = req.body;
+  const { content, session_id } = req.body;
 
   if (!content || typeof content !== 'string' || content.trim().length === 0) {
     res.status(400).json({ error: 'Message content is required' });
+    return;
+  }
+  if (!session_id || typeof session_id !== 'string') {
+    res.status(400).json({ error: 'session_id is required' });
     return;
   }
 
   const userMessage = content.trim();
 
   try {
-    // Save user message first
+    // Verify session belongs to this user
+    const sessionRes = await pool.query(
+      'SELECT * FROM chat_sessions WHERE id = $1 AND user_id = $2',
+      [session_id, req.userId]
+    );
+    if (sessionRes.rowCount === 0) {
+      res.status(404).json({ error: 'Session not found' });
+      return;
+    }
+    const session = sessionRes.rows[0];
+
+    // Save user message
     await pool.query(
-      'INSERT INTO chat_messages (user_id, role, content) VALUES ($1, $2, $3)',
-      [req.userId, 'user', userMessage]
+      'INSERT INTO chat_messages (user_id, session_id, role, content) VALUES ($1, $2, $3, $4)',
+      [req.userId, session_id, 'user', userMessage]
     );
 
-    // Fetch recent conversation history for context (last 12 messages, oldest first)
+    // Auto-title: update if still default and this is the first user message
+    if (session.title === 'New Conversation') {
+      const msgCount = await pool.query(
+        'SELECT COUNT(*) FROM chat_messages WHERE session_id = $1 AND role = $2',
+        [session_id, 'user']
+      );
+      if (parseInt(msgCount.rows[0].count) <= 1) {
+        await pool.query(
+          'UPDATE chat_sessions SET title = $1, updated_at = now() WHERE id = $2',
+          [makeTitle(userMessage), session_id]
+        );
+      }
+    }
+
+    // Touch session updated_at
+    await pool.query('UPDATE chat_sessions SET updated_at = now() WHERE id = $1', [session_id]);
+
+    // Build conversation history for AI context (last 12 messages)
     const historyResult = await pool.query(
-      'SELECT role, content FROM chat_messages WHERE user_id = $1 ORDER BY created_at DESC LIMIT 12',
-      [req.userId]
+      'SELECT role, content FROM chat_messages WHERE session_id = $1 ORDER BY created_at DESC LIMIT 12',
+      [session_id]
     );
     const conversationHistory = historyResult.rows.reverse();
 
     let assistantContent: string;
 
     if (!HF_TOKEN) {
-      assistantContent =
-        'The AI assistant is not configured. Please add the HUGGINGFACE_API_TOKEN secret to enable real AI responses.';
+      assistantContent = 'The AI assistant is not configured. Please add the HUGGINGFACE_API_TOKEN secret.';
     } else {
       try {
         assistantContent = await callHuggingFace(conversationHistory);
       } catch (aiErr) {
         console.error('HuggingFace AI error:', aiErr);
-        assistantContent =
-          "I'm having a moment of trouble reaching the AI service. Please try sending your message again — it usually resolves quickly.";
+        assistantContent = "I'm having a moment of trouble reaching the AI service. Please try sending your message again — it usually resolves quickly.";
       }
     }
 
     const saved = await pool.query(
-      'INSERT INTO chat_messages (user_id, role, content) VALUES ($1, $2, $3) RETURNING *',
-      [req.userId, 'assistant', assistantContent]
+      'INSERT INTO chat_messages (user_id, session_id, role, content) VALUES ($1, $2, $3, $4) RETURNING *',
+      [req.userId, session_id, 'assistant', assistantContent]
     );
+
+    // Touch session again after AI reply
+    await pool.query('UPDATE chat_sessions SET updated_at = now() WHERE id = $1', [session_id]);
 
     res.json({ message: saved.rows[0] });
   } catch (err) {
     console.error('Chat message error:', err);
     res.status(500).json({ error: 'Failed to send message' });
-  }
-});
-
-// DELETE /api/chat/messages — clear the user's full chat history
-router.delete('/messages', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    await pool.query('DELETE FROM chat_messages WHERE user_id = $1', [req.userId]);
-    res.json({ success: true });
-  } catch (err) {
-    console.error('Chat clear error:', err);
-    res.status(500).json({ error: 'Failed to clear messages' });
   }
 });
 

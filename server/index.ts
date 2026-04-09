@@ -23,6 +23,22 @@ async function runMigrations() {
         ADD COLUMN IF NOT EXISTS lifestyle_rec      TEXT,
         ADD COLUMN IF NOT EXISTS medical_rec        TEXT
     `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS chat_sessions (
+        id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        title      TEXT NOT NULL DEFAULT 'New Conversation',
+        created_at TIMESTAMP DEFAULT now(),
+        updated_at TIMESTAMP DEFAULT now()
+      )
+    `);
+
+    await pool.query(`
+      ALTER TABLE chat_messages
+        ADD COLUMN IF NOT EXISTS session_id UUID REFERENCES chat_sessions(id) ON DELETE CASCADE
+    `);
+
     console.log('Database migration complete.');
   } catch (err) {
     console.error('Migration error:', err);
