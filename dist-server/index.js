@@ -44,7 +44,7 @@ async function runMigrations() {
         console.error('Migration error:', err);
     }
 }
-const PORT = isProduction ? 5000 : 3001;
+const PORT = 3001; // Always 3001 — mapped to external port 80 by the platform
 app.use(cors({
     origin: isProduction ? false : 'http://localhost:5000',
     credentials: true,
