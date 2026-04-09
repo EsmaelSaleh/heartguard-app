@@ -24,6 +24,18 @@ interface Assessment {
   created_at: string;
 }
 
+function parseAssessment(raw: Record<string, unknown>): Assessment {
+  return {
+    ...raw,
+    cholesterol: Math.round(Number(raw.cholesterol)),
+    bmi: Math.round(Number(raw.bmi) * 10) / 10,
+    heart_rate: Math.round(Number(raw.heart_rate)),
+    glucose: Math.round(Number(raw.glucose)),
+    pulse_pressure: Math.round(Number(raw.pulse_pressure)),
+    risk_score: Math.round(Number(raw.risk_score)),
+  } as Assessment;
+}
+
 function getMetricStatus(type: string, value: number) {
   switch (type) {
     case 'cholesterol':
@@ -183,7 +195,7 @@ const RiskReportPage: React.FC<RiskReportPageProps> = () => {
       .then(r => r.json())
       .then(data => {
         if (!data.assessment) navigate('/dashboard');
-        else setAssessment(data.assessment);
+        else setAssessment(parseAssessment(data.assessment));
       })
       .catch(() => setError('Failed to load your report. Please refresh.'))
       .finally(() => setLoading(false));

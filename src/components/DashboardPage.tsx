@@ -18,6 +18,18 @@ interface Assessment {
   created_at: string;
 }
 
+function parseAssessment(raw: Record<string, unknown>): Assessment {
+  return {
+    ...raw,
+    cholesterol: Math.round(Number(raw.cholesterol)),
+    bmi: Math.round(Number(raw.bmi) * 10) / 10,
+    heart_rate: Math.round(Number(raw.heart_rate)),
+    glucose: Math.round(Number(raw.glucose)),
+    pulse_pressure: Math.round(Number(raw.pulse_pressure)),
+    risk_score: Math.round(Number(raw.risk_score)),
+  } as Assessment;
+}
+
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
@@ -111,8 +123,8 @@ const DashboardPage: React.FC = () => {
       fetch('/api/assessment/history', { credentials: 'include' }).then(r => r.json()),
     ])
       .then(([latestData, historyData]) => {
-        setLatest(latestData.assessment ?? null);
-        setHistory(historyData.assessments ?? []);
+        setLatest(latestData.assessment ? parseAssessment(latestData.assessment) : null);
+        setHistory((historyData.assessments ?? []).map(parseAssessment));
       })
       .catch(() => setError('Failed to load your health data. Please refresh.'))
       .finally(() => setLoading(false));

@@ -57,7 +57,18 @@ const ChatbotPage: React.FC<ChatbotPageProps> = () => {
       fetch('/api/assessment/latest', { credentials: 'include' }).then(r => r.json()),
     ]).then(([chatData, assessmentData]) => {
       setMessages(chatData.messages || []);
-      if (assessmentData.assessment) setLatestAssessment(assessmentData.assessment);
+      if (assessmentData.assessment) {
+        const raw = assessmentData.assessment;
+        setLatestAssessment({
+          ...raw,
+          heart_rate: Math.round(Number(raw.heart_rate)),
+          pulse_pressure: Math.round(Number(raw.pulse_pressure)),
+          glucose: Math.round(Number(raw.glucose)),
+          cholesterol: Math.round(Number(raw.cholesterol)),
+          bmi: Math.round(Number(raw.bmi) * 10) / 10,
+          risk_score: Math.round(Number(raw.risk_score)),
+        });
+      }
     }).catch(() => {}).finally(() => setIsLoading(false));
   }, []);
 

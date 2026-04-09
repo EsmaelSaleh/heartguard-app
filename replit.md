@@ -1,96 +1,67 @@
 # HeartGuard
 
-A cardiac risk assessment web application built with React + Vite + TypeScript + Tailwind CSS.
+A cardiac risk assessment web application built with React + Vite + TypeScript + Tailwind CSS. Full production build — all pages connected to the Express API and PostgreSQL database (no mock data in the critical path).
 
 ## Architecture
 
 - **Frontend**: React 19 + TypeScript + Vite, served on port 5000
+- **Backend**: Express + TypeScript (`tsx watch`), port 3001
 - **Styling**: Tailwind CSS v3 + Framer Motion animations
 - **Routing**: React Router DOM v7
 - **Database**: Replit PostgreSQL (connection via `DATABASE_URL` env var)
+- **Auth**: httpOnly cookie sessions (30-day expiry), bcrypt (12 rounds)
+
+## User Flow
+
+1. `/` Landing page
+2. `/signup` → Register (no session created) → Success screen → redirect to `/login`
+3. `/login` → Sets session → checks `/api/onboarding/status`
+   - No profile → `/onboarding/welcome` → basic-info → lifestyle → medical-history → `/risk-assessment/vitals`
+   - Has profile → `/dashboard`
+4. `/risk-assessment/vitals` → enter metrics → pass via router state to `/risk-assessment/ecg`
+5. `/risk-assessment/ecg` → optional ECG upload → POST `/api/assessment` → `/risk-report`
+6. `/risk-report` → loads from `/api/assessment/latest`, dynamic AI analysis
+7. `/dashboard` → smart: shows empty state (no assessments) OR full dashboard with real data
+8. `/chatbot` → persisted conversation via `/api/chat/*`
 
 ## Database Schema
 
 All tables use UUID primary keys via `gen_random_uuid()`.
 
 ### `users`
-Core authentication table.
-- `id` UUID PK
-- `email` VARCHAR(255) UNIQUE NOT NULL
-- `password_hash` TEXT NOT NULL
-- `full_name` VARCHAR(255)
-- `created_at`, `updated_at` TIMESTAMP
+- `id` UUID PK, `email` UNIQUE, `password_hash`, `full_name`, `created_at`, `updated_at`
 
 ### `sessions`
-Token-based session management.
-- `id` UUID PK
-- `user_id` UUID FK → users
-- `token` TEXT UNIQUE NOT NULL
-- `expires_at` TIMESTAMP NOT NULL
-- `created_at` TIMESTAMP
+- `id` UUID PK, `user_id` FK→users, `token` UNIQUE, `expires_at`, `created_at`
 
 ### `user_profiles`
-Onboarding Step 1 — basic info.
-- `id` UUID PK
-- `user_id` UUID FK → users (UNIQUE — one profile per user)
-- `gender` VARCHAR(20)
-- `date_of_birth` DATE
-- `created_at`, `updated_at` TIMESTAMP
+- `id` UUID PK, `user_id` FK→users UNIQUE, `gender`, `date_of_birth`, timestamps
 
 ### `lifestyle_data`
-Onboarding Step 2 — lifestyle habits.
-- `id` UUID PK
-- `user_id` UUID FK → users (UNIQUE)
-- `cigarettes_per_day` INTEGER DEFAULT 0
-- `created_at`, `updated_at` TIMESTAMP
+- `id` UUID PK, `user_id` FK→users UNIQUE, `cigarettes_per_day`, timestamps
 
 ### `medical_history`
-Onboarding Step 3 — medical conditions.
-- `id` UUID PK
-- `user_id` UUID FK → users (UNIQUE)
-- `conditions` TEXT[] DEFAULT '{}' — e.g. ['Hypertension', 'Diabetes']
-- `has_test_results` BOOLEAN DEFAULT FALSE
-- `created_at`, `updated_at` TIMESTAMP
+- `id` UUID PK, `user_id` FK→users UNIQUE, `conditions TEXT[]`, `has_test_results BOOLEAN`, timestamps
 
 ### `risk_assessments`
-Clinical vitals + ECG upload + calculated risk score. Multiple assessments per user allowed.
-- `id` UUID PK
-- `user_id` UUID FK → users
-- `cholesterol` NUMERIC(6,2) — mg/dL
-- `bmi` NUMERIC(5,2) — kg/m²
-- `heart_rate` INTEGER — BPM
-- `glucose` NUMERIC(6,2) — mg/dL
-- `pulse_pressure` NUMERIC(6,2) — mmHg
-- `ecg_file_url` TEXT — uploaded ECG image URL
-- `risk_score` NUMERIC(5,2) — 0–100
-- `risk_level` VARCHAR(20) — 'low' | 'moderate' | 'high'
-- `created_at` TIMESTAMP
+- `id` UUID PK, `user_id` FK→users, `cholesterol NUMERIC`, `bmi NUMERIC`, `heart_rate INTEGER`, `glucose NUMERIC`, `pulse_pressure NUMERIC`, `ecg_file_url TEXT`, `risk_score NUMERIC`, `risk_level VARCHAR`, `created_at`
+- Risk scoring: low < 33, moderate 33–66, high > 66
 
 ### `chat_messages`
-Chatbot conversation history.
-- `id` UUID PK
-- `user_id` UUID FK → users
-- `role` VARCHAR(20) CHECK IN ('user', 'assistant')
-- `content` TEXT NOT NULL
-- `created_at` TIMESTAMP
-
-## Build Order
-
-1. ✅ Database — schema designed and provisioned
-2. ✅ Backend — Express API server (auth, assessments, chatbot endpoints)
-3. 🔲 Signup / Login — wire existing UI to real auth endpoints
+- `id` UUID PK, `user_id` FK→users, `role VARCHAR`, `content TEXT`, `created_at`
 
 ## API Endpoints
 
-All routes are prefixed `/api/` and proxied from Vite's dev server (port 5000) to Express (port 3001).
+All routes prefixed `/api/`, proxied from Vite (port 5000) to Express (port 3001).
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/api/auth/signup` | — | Create account, sets session cookie |
+| POST | `/api/auth/register` | — | Create account only (no session) |
+| POST | `/api/auth/signup` | — | Create account + session |
 | POST | `/api/auth/login` | — | Log in, sets session cookie |
-| POST | `/api/auth/logout` | ✓ | Destroys session cookie |
-| GET | `/api/auth/me` | ✓ | Returns current user |
-| GET | `/api/onboarding/status` | ✓ | Fetch all onboarding data |
+| POST | `/api/auth/logout` | ✓ | Destroys session |
+| GET | `/api/auth/me` | ✓ | Current user |
+| GET | `/api/onboarding/status` | ✓ | All onboarding data |
 | PUT | `/api/onboarding/profile` | ✓ | Save gender + date_of_birth |
 | PUT | `/api/onboarding/lifestyle` | ✓ | Save cigarettes_per_day |
 | PUT | `/api/onboarding/medical-history` | ✓ | Save conditions + has_test_results |
@@ -102,7 +73,14 @@ All routes are prefixed `/api/` and proxied from Vite's dev server (port 5000) t
 | DELETE | `/api/chat/messages` | ✓ | Clear chat history |
 | GET | `/api/health` | — | Server health check |
 
-Sessions use httpOnly cookies (30-day expiry). Passwords hashed with bcrypt (12 rounds).
+## Key Implementation Notes
+
+- PostgreSQL NUMERIC fields return as strings — normalized via `parseAssessment()` in dashboard/report
+- Vitals passed from VitalsPage → ECGPage via React Router location state (not localStorage)
+- `/dashboard-results` redirects to `/dashboard` for backward compatibility
+- Chat uses keyword-based stub responses (ready for OpenAI swap via `server/routes/chat.ts`)
+- All onboarding saves use `ON CONFLICT (user_id) DO UPDATE` (safe upsert)
+- Risk recommendations are dynamically generated from actual metric values
 
 ## Running the App
 
