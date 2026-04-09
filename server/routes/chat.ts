@@ -24,16 +24,8 @@ async function callHuggingFace(conversationHistory: { role: string; content: str
     ...conversationHistory,
   ];
 
-  const prompt = messages
-    .map(m => {
-      if (m.role === 'system') return `<s>[INST] <<SYS>>\n${m.content}\n<</SYS>>\n\n`;
-      if (m.role === 'user') return `${m.content} [/INST]`;
-      return `${m.content} </s><s>[INST] `;
-    })
-    .join('');
-
   const response = await fetch(
-    `https://api-inference.huggingface.co/models/${HF_MODEL}`,
+    `https://router.huggingface.co/models/${HF_MODEL}/v1/chat/completions`,
     {
       method: 'POST',
       headers: {
@@ -41,16 +33,13 @@ async function callHuggingFace(conversationHistory: { role: string; content: str
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        inputs: prompt,
-        parameters: {
-          max_new_tokens: 400,
-          temperature: 0.6,
-          top_p: 0.9,
-          repetition_penalty: 1.15,
-          return_full_text: false,
-        },
+        model: HF_MODEL,
+        messages,
+        max_tokens: 500,
+        temperature: 0.6,
+        top_p: 0.9,
       }),
-      signal: AbortSignal.timeout(30000),
+      signal: AbortSignal.timeout(45000),
     }
   );
 
@@ -59,12 +48,11 @@ async function callHuggingFace(conversationHistory: { role: string; content: str
     throw new Error(`HuggingFace API error ${response.status}: ${err}`);
   }
 
-  const data = await response.json() as Array<{ generated_text: string }>;
-  const text = data?.[0]?.generated_text?.trim();
+  const data = await response.json() as { choices: Array<{ message: { content: string } }> };
+  const text = data?.choices?.[0]?.message?.content?.trim();
   if (!text) throw new Error('Empty response from HuggingFace');
 
-  // Strip any leftover instruction tokens
-  return text.replace(/\[INST\].*?\[\/INST\]/gs, '').replace(/<\/?s>/g, '').trim();
+  return text;
 }
 
 // GET /api/chat/messages — fetch full conversation history for the user
