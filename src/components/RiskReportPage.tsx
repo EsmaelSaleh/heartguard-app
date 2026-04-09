@@ -101,6 +101,16 @@ function riskLabel(level: string) {
   return 'Low Risk';
 }
 
+function shortEcgLabel(cls: string | null): { short: string; detail: string } | null {
+  if (!cls) return null;
+  const c = cls.toLowerCase();
+  if (c.includes('history') || c.includes('hist')) return { short: 'MI History', detail: cls };
+  if (c.includes('infarction') || (c.includes('mi') && !c.includes('history'))) return { short: 'Infarction', detail: cls };
+  if (c.includes('abnormal') || c.includes('arrhythmia')) return { short: 'Arrhythmia', detail: cls };
+  if (c.includes('normal')) return { short: 'Normal', detail: cls };
+  return { short: cls, detail: cls };
+}
+
 // Fallback analysis (used only when AI fields are absent)
 function generateFallbackAnalysis(a: Assessment): string {
   const elevated: string[] = [];
@@ -304,12 +314,16 @@ const RiskReportPage: React.FC<RiskReportPageProps> = () => {
                 </div>
 
                 {/* ECG Classification (only when AI data exists) */}
-                {assessment.ecg_classification && (
-                  <div className="mt-6 w-full p-3 bg-primary/5 rounded-xl border border-primary/10 text-center">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">ECG Classification</p>
-                    <p className="text-sm font-bold text-primary">{assessment.ecg_classification}</p>
-                  </div>
-                )}
+                {shortEcgLabel(assessment.ecg_classification) && (() => {
+                  const ecg = shortEcgLabel(assessment.ecg_classification)!;
+                  return (
+                    <div className="mt-6 w-full p-3 bg-primary/5 rounded-xl border border-primary/10 text-center">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">ECG Classification</p>
+                      <p className="text-base font-black text-primary">{ecg.short}</p>
+                      <p className="text-[10px] text-slate-400 mt-1 leading-snug">{ecg.detail}</p>
+                    </div>
+                  );
+                })()}
               </motion.div>
 
               {/* AI Findings */}
@@ -373,15 +387,23 @@ const RiskReportPage: React.FC<RiskReportPageProps> = () => {
                   );
                 })}
                 {/* ECG card */}
-                <div className="flex flex-col bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
-                  <span className="text-slate-400 text-xs font-bold uppercase mb-2">ECG</span>
-                  <span className="text-lg font-black text-slate-900 dark:text-white leading-tight mt-1">
-                    {assessment.ecg_classification ?? (assessment.ecg_file_url ? 'On file' : 'N/A')}
-                  </span>
-                  <span className={`mt-3 px-2 py-1 rounded-full text-[10px] font-bold w-fit uppercase ${assessment.ecg_file_url ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
-                    {assessment.ecg_file_url ? 'Uploaded' : 'Not provided'}
-                  </span>
-                </div>
+                {(() => {
+                  const ecg = shortEcgLabel(assessment.ecg_classification);
+                  return (
+                    <div className="flex flex-col bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+                      <span className="text-slate-400 text-xs font-bold uppercase mb-2">ECG</span>
+                      <span className="text-xl font-black text-slate-900 dark:text-white leading-tight mt-1">
+                        {ecg ? ecg.short : (assessment.ecg_file_url ? 'On file' : 'N/A')}
+                      </span>
+                      {ecg && ecg.short !== ecg.detail && (
+                        <span className="text-[10px] text-slate-400 mt-1 leading-snug">{ecg.detail}</span>
+                      )}
+                      <span className={`mt-auto pt-3 px-2 py-1 rounded-full text-[10px] font-bold w-fit uppercase ${assessment.ecg_file_url ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
+                        {assessment.ecg_file_url ? 'Uploaded' : 'Not provided'}
+                      </span>
+                    </div>
+                  );
+                })()}
               </div>
             </motion.section>
 
