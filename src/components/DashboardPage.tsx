@@ -113,6 +113,28 @@ function buildTrendPath(assessments: Assessment[], width: number, height: number
     .join(' ');
 }
 
+function buildAreaPath(assessments: Assessment[], width: number, height: number): string {
+  if (assessments.length < 2) return '';
+  const pts = [...assessments].reverse().slice(0, 6);
+  const n = pts.length;
+  const line = pts
+    .map((a, i) => {
+      const x = (i / (n - 1)) * width;
+      const y = height - (a.risk_score / 100) * height;
+      return `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
+    })
+    .join(' ');
+  const lastX = width;
+  const firstX = 0;
+  return `${line} L ${lastX} ${height} L ${firstX} ${height} Z`;
+}
+
+function scoreColor(score: number): string {
+  if (score >= 66) return '#dc2626';
+  if (score >= 33) return '#f59e0b';
+  return '#16a34a';
+}
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
@@ -124,6 +146,7 @@ const DashboardPage: React.FC = () => {
   const [history, setHistory] = useState<Assessment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
   const firstName = user?.full_name ? user.full_name.split(' ')[0] : user?.email?.split('@')[0] ?? 'there';
@@ -388,81 +411,187 @@ const DashboardPage: React.FC = () => {
 
             {/* Historical Trends Chart */}
             <motion.div variants={fadeUp} className="bg-white dark:bg-slate-900 rounded-2xl p-8 shadow-sm border border-slate-100 dark:border-slate-800">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-10 gap-6">
-                <div>
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-8 gap-4">
+                <div className="flex flex-col gap-1">
                   <h3 className="font-bold text-xl text-slate-900 dark:text-slate-100">Risk Score Trend</h3>
-                  <p className="text-slate-500 text-sm mt-1">
+                  <p className="text-slate-500 text-sm">
                     {history.length >= 2
                       ? `Tracking your risk score across ${Math.min(history.length, 6)} assessments`
                       : 'Take more assessments to track your progress over time'}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 text-[11px] font-bold">
-                    <span className="w-3 h-3 rounded-full" style={{ background: riskStrokeClass(latest.risk_level) }} />
-                    <span className="text-slate-600 dark:text-slate-400">Risk Score</span>
-                  </div>
-                </div>
+                {/* Stats + trend indicator */}
+                {history.length >= 2 && (() => {
+                  const pts = [...history].reverse().slice(0, 6);
+                  const delta = pts[pts.length - 1].risk_score - pts[0].risk_score;
+                  const best = Math.min(...pts.map(p => p.risk_score));
+                  const improving = delta < 0;
+                  const stable = delta === 0;
+                  return (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                        <span className="material-symbols-outlined text-sm">emoji_events</span>
+                        Best: {best}%
+                      </div>
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                        <span className="material-symbols-outlined text-sm">history</span>
+                        {Math.min(history.length, 6)} assessments
+                      </div>
+                      {!stable && (
+                        <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold ${improving ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'}`}>
+                          <span className="material-symbols-outlined text-sm">{improving ? 'trending_down' : 'trending_up'}</span>
+                          {improving ? `${Math.abs(delta)}pts lower` : `${delta}pts higher`}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
-              {history.length >= 2 ? (
-                <div className="h-64 w-full relative px-2">
-                  <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 800 200">
-                    {/* Grid lines */}
-                    {[0, 50, 100, 150, 200].map(y => (
-                      <line key={y} stroke="currentColor" className="text-slate-100 dark:text-slate-800" strokeWidth="1" x1="0" x2="800" y1={y} y2={y} />
-                    ))}
-                    {/* Y-axis labels */}
-                    {[100, 66, 33, 0].map(v => (
-                      <text key={v} x="-8" y={200 - v * 2} className="text-[9px] fill-slate-400" textAnchor="end" dominantBaseline="middle">{v}</text>
-                    ))}
+              {history.length >= 2 ? (() => {
+                const pts = [...history].reverse().slice(0, 6);
+                const n = pts.length;
+                const W = 800; const H = 200;
+                const getX = (i: number) => n === 1 ? W / 2 : (i / (n - 1)) * W;
+                const getY = (score: number) => H - (score / 100) * H;
 
-                    {/* Risk zone bands */}
-                    <rect x="0" y="0" width="800" height={200 - 66 * 2} fill="#fef2f2" fillOpacity="0.4" />
-                    <rect x="0" y={200 - 66 * 2} width="800" height={(66 - 33) * 2} fill="#fffbeb" fillOpacity="0.4" />
-                    <rect x="0" y={200 - 33 * 2} width="800" height={33 * 2} fill="#f0fdf4" fillOpacity="0.4" />
+                return (
+                  <div className="relative">
+                    {/* Legend */}
+                    <div className="flex items-center gap-4 mb-4 flex-wrap">
+                      {[{ label: 'High Risk', color: '#fca5a5', text: '#dc2626' }, { label: 'Moderate', color: '#fcd34d', text: '#b45309' }, { label: 'Low Risk', color: '#86efac', text: '#16a34a' }].map(z => (
+                        <div key={z.label} className="flex items-center gap-1.5 text-[11px] font-bold" style={{ color: z.text }}>
+                          <span className="w-3 h-3 rounded-sm inline-block" style={{ background: z.color }} />
+                          {z.label}
+                        </div>
+                      ))}
+                    </div>
 
-                    {/* Trend line */}
-                    <motion.path
-                      d={buildTrendPath(history, 800, 200)}
-                      fill="none"
-                      stroke={riskStrokeClass(latest.risk_level)}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="4"
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ duration: 1.5, ease: "easeInOut", delay: 0.3 }}
-                    />
+                    <div className="h-64 w-full relative">
+                      <svg
+                        ref={svgRef}
+                        className="w-full h-full overflow-visible"
+                        preserveAspectRatio="none"
+                        viewBox={`0 0 ${W} ${H}`}
+                        onMouseLeave={() => setHoveredIdx(null)}
+                      >
+                        <defs>
+                          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={scoreColor(pts[pts.length - 1].risk_score)} stopOpacity="0.25" />
+                            <stop offset="100%" stopColor={scoreColor(pts[pts.length - 1].risk_score)} stopOpacity="0.02" />
+                          </linearGradient>
+                        </defs>
 
-                    {/* Data points */}
-                    {[...history].reverse().slice(0, 6).map((a, i, arr) => {
-                      const x = arr.length === 1 ? 400 : (i / (arr.length - 1)) * 800;
-                      const y = 200 - (a.risk_score / 100) * 200;
-                      return (
-                        <circle key={a.id} cx={x} cy={y} r="6" fill="white" stroke={riskStrokeClass(latest.risk_level)} strokeWidth="3">
-                          <title>{`${formatDate(a.created_at)}: ${a.risk_score}`}</title>
-                        </circle>
-                      );
-                    })}
-                  </svg>
+                        {/* Zone bands */}
+                        <rect x="0" y="0" width={W} height={H - 66 * 2} fill="#fef2f2" fillOpacity="0.85" />
+                        <rect x="0" y={H - 66 * 2} width={W} height={(66 - 33) * 2} fill="#fffbeb" fillOpacity="0.85" />
+                        <rect x="0" y={H - 33 * 2} width={W} height={33 * 2} fill="#f0fdf4" fillOpacity="0.85" />
 
-                  {/* X-axis dates */}
-                  <div className="absolute -bottom-8 w-full flex justify-between text-[10px] font-bold text-slate-400 uppercase">
-                    {[...history].reverse().slice(0, 6).map(a => (
-                      <span key={a.id}>{formatDate(a.created_at)}</span>
-                    ))}
+                        {/* Zone labels */}
+                        <text x={W - 6} y={H - 84 * 2} textAnchor="end" className="fill-red-400" fontSize="9" fontWeight="700" opacity="0.7">HIGH</text>
+                        <text x={W - 6} y={H - 49 * 2} textAnchor="end" className="fill-amber-400" fontSize="9" fontWeight="700" opacity="0.7">MODERATE</text>
+                        <text x={W - 6} y={H - 16 * 2} textAnchor="end" className="fill-green-500" fontSize="9" fontWeight="700" opacity="0.7">LOW</text>
+
+                        {/* Grid lines */}
+                        {[0, 66 * 2, 33 * 2, H].map(y => (
+                          <line key={y} stroke="currentColor" className="text-slate-200 dark:text-slate-700" strokeWidth="1" strokeDasharray="4 4" x1="0" x2={W} y1={H - y / 2 * 2} y2={H - y / 2 * 2} />
+                        ))}
+
+                        {/* Y-axis labels */}
+                        {[0, 33, 66, 100].map(v => (
+                          <text key={v} x="-6" y={H - v * 2} className="fill-slate-400" fontSize="9" textAnchor="end" dominantBaseline="middle">{v}</text>
+                        ))}
+
+                        {/* Area fill */}
+                        <path d={buildAreaPath(history, W, H)} fill="url(#areaGrad)" />
+
+                        {/* Trend line */}
+                        <motion.path
+                          d={buildTrendPath(history, W, H)}
+                          fill="none"
+                          stroke={scoreColor(pts[pts.length - 1].risk_score)}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="3"
+                          initial={{ pathLength: 0 }}
+                          animate={{ pathLength: 1 }}
+                          transition={{ duration: 1.5, ease: 'easeInOut', delay: 0.3 }}
+                        />
+
+                        {/* Vertical crosshair */}
+                        {hoveredIdx !== null && (
+                          <line
+                            x1={getX(hoveredIdx)} x2={getX(hoveredIdx)}
+                            y1="0" y2={H}
+                            stroke="#94a3b8" strokeWidth="1" strokeDasharray="4 3"
+                          />
+                        )}
+
+                        {/* Data points */}
+                        {pts.map((a, i) => {
+                          const cx = getX(i);
+                          const cy = getY(a.risk_score);
+                          const isHovered = hoveredIdx === i;
+                          const color = scoreColor(a.risk_score);
+                          return (
+                            <g key={a.id}>
+                              {/* Pulse ring on hover */}
+                              {isHovered && (
+                                <circle cx={cx} cy={cy} r="14" fill={color} fillOpacity="0.15" />
+                              )}
+                              <circle
+                                cx={cx} cy={cy}
+                                r={isHovered ? 8 : 5}
+                                fill="white"
+                                stroke={color}
+                                strokeWidth={isHovered ? 3 : 2.5}
+                                style={{ cursor: 'pointer', transition: 'r 0.15s ease, stroke-width 0.15s ease' }}
+                                onMouseEnter={() => setHoveredIdx(i)}
+                              />
+                            </g>
+                          );
+                        })}
+
+                        {/* Tooltip */}
+                        {hoveredIdx !== null && (() => {
+                          const a = pts[hoveredIdx];
+                          const cx = getX(hoveredIdx);
+                          const cy = getY(a.risk_score);
+                          const color = scoreColor(a.risk_score);
+                          const level = a.risk_score >= 66 ? 'High Risk' : a.risk_score >= 33 ? 'Moderate' : 'Low Risk';
+                          const tw = 130; const th = 52;
+                          const tx = Math.min(Math.max(cx - tw / 2, 4), W - tw - 4);
+                          const ty = cy > H / 2 ? cy - th - 14 : cy + 14;
+                          return (
+                            <g pointerEvents="none">
+                              <rect x={tx} y={ty} width={tw} height={th} rx="6" fill="white" stroke="#e2e8f0" strokeWidth="1" filter="drop-shadow(0 2px 8px rgba(0,0,0,0.10))" />
+                              <text x={tx + tw / 2} y={ty + 16} textAnchor="middle" fontSize="9" fontWeight="700" fill="#94a3b8">{formatDate(a.created_at)}</text>
+                              <text x={tx + tw / 2} y={ty + 31} textAnchor="middle" fontSize="14" fontWeight="900" fill={color}>{a.risk_score}%</text>
+                              <text x={tx + tw / 2} y={ty + 45} textAnchor="middle" fontSize="8" fontWeight="700" fill={color}>{level.toUpperCase()}</text>
+                            </g>
+                          );
+                        })()}
+                      </svg>
+
+                      {/* X-axis dates */}
+                      <div className="absolute -bottom-7 left-0 right-0 flex justify-between text-[10px] font-bold text-slate-400 uppercase px-0.5">
+                        {pts.map(a => (
+                          <span key={a.id}>{formatDate(a.created_at)}</span>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ) : (
+                );
+              })() : (
                 <div className="h-40 flex flex-col items-center justify-center gap-3 text-center">
                   <span className="material-symbols-outlined text-4xl text-slate-200 dark:text-slate-700">show_chart</span>
                   <p className="text-sm text-slate-400">Take another assessment to see your risk trend over time.</p>
                 </div>
               )}
 
-              <div className="mt-16 flex justify-end">
+              <div className="mt-14 flex justify-end">
                 <button
                   onClick={() => navigate('/risk-report')}
                   className="flex items-center gap-2 text-primary font-bold text-sm hover:underline"
