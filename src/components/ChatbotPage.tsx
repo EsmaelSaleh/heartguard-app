@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { brandAssets } from '../data/mockData';
 import { useAuth } from '../context/AuthContext';
 
@@ -413,7 +415,31 @@ const ChatbotPage: React.FC = () => {
                 </div>
                 <div className={`flex flex-col gap-1 ${msg.role === 'user' ? 'items-end' : ''}`}>
                   <div className={`px-4 py-3 rounded-2xl shadow-sm ${msg.role === 'assistant' ? 'bg-white dark:bg-slate-800 rounded-tl-none border border-slate-100 dark:border-slate-700' : 'bg-primary text-white rounded-tr-none shadow-primary/20'}`}>
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                    {msg.role === 'assistant' ? (
+                      <div className="text-sm leading-relaxed prose-chat">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
+                            strong: ({ children }) => <strong className="font-bold text-slate-900 dark:text-slate-100">{children}</strong>,
+                            em: ({ children }) => <em className="italic">{children}</em>,
+                            ul: ({ children }) => <ul className="list-disc pl-4 space-y-1 my-2">{children}</ul>,
+                            ol: ({ children }) => <ol className="list-decimal pl-4 space-y-1 my-2">{children}</ol>,
+                            li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                            h1: ({ children }) => <h1 className="text-base font-bold mt-3 mb-1 text-slate-900 dark:text-slate-100">{children}</h1>,
+                            h2: ({ children }) => <h2 className="text-sm font-bold mt-3 mb-1 text-slate-900 dark:text-slate-100">{children}</h2>,
+                            h3: ({ children }) => <h3 className="text-sm font-semibold mt-2 mb-1 text-slate-800 dark:text-slate-200">{children}</h3>,
+                            code: ({ children }) => <code className="bg-slate-100 dark:bg-slate-700 text-xs px-1.5 py-0.5 rounded font-mono text-primary">{children}</code>,
+                            blockquote: ({ children }) => <blockquote className="border-l-4 border-primary/30 pl-3 my-2 text-slate-500 dark:text-slate-400 italic">{children}</blockquote>,
+                            hr: () => <hr className="my-3 border-slate-200 dark:border-slate-600" />,
+                          }}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                    )}
                   </div>
                   <p className={`text-[10px] text-slate-400 ${msg.role === 'user' ? 'mr-1' : 'ml-1'}`}>
                     {msg.role === 'assistant' ? 'Heart Health AI' : 'You'} · {formatTime(msg.created_at)}
