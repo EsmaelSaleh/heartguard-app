@@ -129,6 +129,28 @@ function buildAreaPath(assessments: Assessment[], width: number, height: number)
   return `${line} L ${lastX} ${height} L ${firstX} ${height} Z`;
 }
 
+function buildSmoothPath(assessments: Assessment[], width: number, height: number): string {
+  const pts = [...assessments].reverse().slice(0, 6);
+  const n = pts.length;
+  if (n < 2) return '';
+  const coords = pts.map((a, i) => ({
+    x: (i / (n - 1)) * width,
+    y: height - (a.risk_score / 100) * height,
+  }));
+  let d = `M ${coords[0].x.toFixed(1)} ${coords[0].y.toFixed(1)}`;
+  for (let i = 1; i < coords.length; i++) {
+    const midX = ((coords[i - 1].x + coords[i].x) / 2).toFixed(1);
+    d += ` C ${midX} ${coords[i - 1].y.toFixed(1)}, ${midX} ${coords[i].y.toFixed(1)}, ${coords[i].x.toFixed(1)} ${coords[i].y.toFixed(1)}`;
+  }
+  return d;
+}
+
+function buildSmoothAreaPath(assessments: Assessment[], width: number, height: number): string {
+  const smooth = buildSmoothPath(assessments, width, height);
+  if (!smooth) return '';
+  return `${smooth} L ${width} ${height} L 0 ${height} Z`;
+}
+
 function scoreColor(score: number): string {
   if (score >= 66) return '#dc2626';
   if (score >= 33) return '#f59e0b';
@@ -479,9 +501,20 @@ const DashboardPage: React.FC = () => {
                       >
                         <defs>
                           <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor={scoreColor(pts[pts.length - 1].risk_score)} stopOpacity="0.25" />
-                            <stop offset="100%" stopColor={scoreColor(pts[pts.length - 1].risk_score)} stopOpacity="0.02" />
+                            <stop offset="0%" stopColor={scoreColor(pts[pts.length - 1].risk_score)} stopOpacity="0.22" />
+                            <stop offset="100%" stopColor={scoreColor(pts[pts.length - 1].risk_score)} stopOpacity="0.01" />
                           </linearGradient>
+                          <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stopColor={scoreColor(pts[0].risk_score)} />
+                            <stop offset="100%" stopColor={scoreColor(pts[pts.length - 1].risk_score)} />
+                          </linearGradient>
+                          <filter id="lineGlow" x="-20%" y="-60%" width="140%" height="220%">
+                            <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+                            <feMerge>
+                              <feMergeNode in="blur" />
+                              <feMergeNode in="SourceGraphic" />
+                            </feMerge>
+                          </filter>
                         </defs>
 
                         {/* Zone bands */}
@@ -504,17 +537,31 @@ const DashboardPage: React.FC = () => {
                           <text key={v} x="-6" y={H - v * 2} className="fill-slate-400" fontSize="9" textAnchor="end" dominantBaseline="middle">{v}</text>
                         ))}
 
-                        {/* Area fill */}
-                        <path d={buildAreaPath(history, W, H)} fill="url(#areaGrad)" />
+                        {/* Area fill (smooth) */}
+                        <path d={buildSmoothAreaPath(history, W, H)} fill="url(#areaGrad)" />
 
-                        {/* Trend line */}
+                        {/* Trend line — glow halo */}
                         <motion.path
-                          d={buildTrendPath(history, W, H)}
+                          d={buildSmoothPath(history, W, H)}
                           fill="none"
-                          stroke={scoreColor(pts[pts.length - 1].risk_score)}
+                          stroke="url(#lineGrad)"
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          strokeWidth="3"
+                          strokeWidth="10"
+                          strokeOpacity="0.18"
+                          initial={{ pathLength: 0 }}
+                          animate={{ pathLength: 1 }}
+                          transition={{ duration: 1.5, ease: 'easeInOut', delay: 0.2 }}
+                        />
+                        {/* Trend line — main */}
+                        <motion.path
+                          d={buildSmoothPath(history, W, H)}
+                          fill="none"
+                          stroke="url(#lineGrad)"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="3.5"
+                          filter="url(#lineGlow)"
                           initial={{ pathLength: 0 }}
                           animate={{ pathLength: 1 }}
                           transition={{ duration: 1.5, ease: 'easeInOut', delay: 0.3 }}
