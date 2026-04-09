@@ -13,21 +13,13 @@ interface Message {
   created_at?: string;
 }
 
-interface LatestAssessment {
-  heart_rate: number;
-  pulse_pressure: number;
-  risk_score: number;
-  risk_level: string;
-  cholesterol: number;
-  glucose: number;
-  bmi: number;
-}
-
 const suggestedPrompts = [
-  'Show me a heart-healthy meal plan',
-  'Explain my risk score',
-  'Can I exercise with high cholesterol?',
-  'What does high glucose mean?',
+  'What foods are good for my heart?',
+  'How much exercise do I need weekly?',
+  'What are early signs of heart disease?',
+  'How does stress affect the heart?',
+  'Is high blood pressure dangerous?',
+  'Can I reverse heart disease with diet?',
 ];
 
 function formatTime(iso?: string): string {
@@ -42,7 +34,6 @@ const ChatbotPage: React.FC<ChatbotPageProps> = () => {
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [latestAssessment, setLatestAssessment] = useState<LatestAssessment | null>(null);
   const [clearError, setClearError] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -52,24 +43,11 @@ const ChatbotPage: React.FC<ChatbotPageProps> = () => {
     : user?.email?.[0].toUpperCase() ?? '?';
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/chat/messages', { credentials: 'include' }).then(r => r.json()),
-      fetch('/api/assessment/latest', { credentials: 'include' }).then(r => r.json()),
-    ]).then(([chatData, assessmentData]) => {
-      setMessages(chatData.messages || []);
-      if (assessmentData.assessment) {
-        const raw = assessmentData.assessment;
-        setLatestAssessment({
-          ...raw,
-          heart_rate: Math.round(Number(raw.heart_rate)),
-          pulse_pressure: Math.round(Number(raw.pulse_pressure)),
-          glucose: Math.round(Number(raw.glucose)),
-          cholesterol: Math.round(Number(raw.cholesterol)),
-          bmi: Math.round(Number(raw.bmi) * 10) / 10,
-          risk_score: Math.round(Number(raw.risk_score)),
-        });
-      }
-    }).catch(() => {}).finally(() => setIsLoading(false));
+    fetch('/api/chat/messages', { credentials: 'include' })
+      .then(r => r.json())
+      .then(data => setMessages(data.messages || []))
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
   }, []);
 
   useEffect(() => {
@@ -106,7 +84,7 @@ const ChatbotPage: React.FC<ChatbotPageProps> = () => {
   };
 
   const handleClearChat = async () => {
-    if (!window.confirm('Start a new consultation? This will clear your current chat history.')) return;
+    if (!window.confirm('Start a new chat? This will clear your current conversation history.')) return;
     try {
       await fetch('/api/chat/messages', { method: 'DELETE', credentials: 'include' });
       setMessages([]);
@@ -127,87 +105,58 @@ const ChatbotPage: React.FC<ChatbotPageProps> = () => {
     <div className="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen relative flex w-full overflow-hidden" style={{ height: '100dvh' }}>
 
       {/* Left Sidebar */}
-      <aside className="w-80 flex-shrink-0 border-r border-primary/10 bg-white dark:bg-background-dark/50 hidden md:flex flex-col">
+      <aside className="w-72 flex-shrink-0 border-r border-primary/10 bg-white dark:bg-background-dark/50 hidden md:flex flex-col">
+
+        {/* Logo */}
         <div className="p-6 border-b border-primary/5">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
+          <div className="flex items-center gap-3 cursor-pointer mb-6" onClick={() => navigate('/dashboard')}>
             <div className="size-10 flex items-center justify-center">
               <img src={brandAssets.logo} alt="HeartGuard Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="text-primary text-xl font-bold leading-tight">HeartGuard</h1>
-              <p className="text-slate-500 text-xs font-medium uppercase tracking-wider">Digital Health AI</p>
+              <p className="text-slate-500 text-xs font-medium uppercase tracking-wider">Heart Health AI</p>
             </div>
           </div>
 
           <button
             onClick={handleClearChat}
-            className="mt-8 w-full flex items-center justify-center gap-2 bg-primary text-white rounded-xl py-3 px-4 font-semibold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98]"
+            className="w-full flex items-center justify-center gap-2 bg-primary text-white rounded-xl py-3 px-4 font-semibold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98]"
           >
             <span className="material-symbols-outlined text-sm">add</span>
-            <span>New Consultation</span>
+            <span>New Conversation</span>
           </button>
           {clearError && <p className="text-xs text-red-500 mt-2 text-center">{clearError}</p>}
         </div>
 
-        {/* Latest Vitals Panel */}
-        {latestAssessment && (
-          <div className="px-4 pt-5 pb-3">
-            <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Latest Vitals</p>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-rose-500 text-lg">favorite</span>
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Heart Rate</span>
-                </div>
-                <span className="text-xs font-bold">{latestAssessment.heart_rate} BPM</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-blue-500 text-lg">water_drop</span>
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Pulse Pressure</span>
-                </div>
-                <span className="text-xs font-bold">{latestAssessment.pulse_pressure} mmHg</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-amber-500 text-lg">glucose</span>
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Glucose</span>
-                </div>
-                <span className="text-xs font-bold">{latestAssessment.glucose} mg/dL</span>
-              </div>
-            </div>
+        {/* Topics */}
+        <div className="flex-1 overflow-y-auto px-4 py-5">
+          <p className="px-2 text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Common Topics</p>
+          <div className="space-y-1">
+            {[
+              { icon: 'restaurant', label: 'Diet & Nutrition' },
+              { icon: 'fitness_center', label: 'Exercise & Activity' },
+              { icon: 'monitor_heart', label: 'Heart Conditions' },
+              { icon: 'medication', label: 'Medications' },
+              { icon: 'self_improvement', label: 'Stress & Mental Health' },
+              { icon: 'smoking_rooms', label: 'Smoking & Lifestyle' },
+            ].map(({ icon, label }) => (
+              <button
+                key={label}
+                onClick={() => handleSend(`Tell me about ${label.toLowerCase()} and heart health`)}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-primary/5 hover:text-primary transition-colors text-sm font-medium text-left"
+              >
+                <span className="material-symbols-outlined text-lg shrink-0">{icon}</span>
+                {label}
+              </button>
+            ))}
           </div>
-        )}
-
-        {/* Risk Score Mini Panel */}
-        {latestAssessment && (
-          <div className="px-4 pb-4">
-            <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Risk Score</p>
-            <div className="bg-primary/5 dark:bg-primary/10 rounded-2xl p-4 border border-primary/10 flex flex-col items-center">
-              <div className="relative size-24 flex items-center justify-center">
-                <svg className="size-full -rotate-90" viewBox="0 0 36 36">
-                  <circle className="stroke-slate-200 dark:stroke-slate-700" cx="18" cy="18" fill="none" r="16" strokeWidth="2" />
-                  <circle
-                    className="stroke-primary"
-                    cx="18" cy="18" fill="none" r="16"
-                    strokeDasharray={`${latestAssessment.risk_score}, 100`}
-                    strokeLinecap="round"
-                    strokeWidth="2"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-xl font-bold text-primary">{latestAssessment.risk_score}</span>
-                  <span className="text-[8px] text-slate-500 font-bold uppercase">{latestAssessment.risk_level}</span>
-                </div>
-              </div>
-              <p className="text-[11px] text-center text-slate-500 mt-3 font-medium">Your latest cardiovascular risk score</p>
-            </div>
-          </div>
-        )}
+        </div>
 
         {/* Profile */}
-        <div className="mt-auto p-4 border-t border-primary/5 bg-slate-50/50 dark:bg-transparent">
-          <div className="flex items-center gap-3 p-2 rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+        <div className="p-4 border-t border-primary/5 bg-slate-50/50 dark:bg-transparent">
+          <div
+            className="flex items-center gap-3 p-2 rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             onClick={async () => { await logout(); navigate('/login'); }}
           >
             <div className="relative">
@@ -239,10 +188,10 @@ const ChatbotPage: React.FC<ChatbotPageProps> = () => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-sm md:text-base font-bold text-primary">HeartGuard AI Assistant</h2>
+                <h2 className="text-sm md:text-base font-bold text-primary">Heart Health Assistant</h2>
                 <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[9px] md:text-[10px] font-bold uppercase shrink-0">Online</span>
               </div>
-              <p className="text-[11px] md:text-xs text-slate-500 font-medium">Clinical Health Intelligence</p>
+              <p className="text-[11px] md:text-xs text-slate-500 font-medium">Ask me anything about cardiovascular health</p>
             </div>
           </div>
 
@@ -266,19 +215,31 @@ const ChatbotPage: React.FC<ChatbotPageProps> = () => {
 
           {!isLoading && messages.length === 0 && (
             <motion.div
-              className="flex flex-col items-center justify-center py-16 text-center gap-4"
+              className="flex flex-col items-center justify-center py-12 text-center gap-4"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
               <div className="size-20 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="material-symbols-outlined text-4xl text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>smart_toy</span>
+                <span className="material-symbols-outlined text-4xl text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
               </div>
-              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
+              <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">
                 Hello, {firstName}! How can I help?
               </h3>
               <p className="text-slate-500 text-sm max-w-sm leading-relaxed">
-                Ask me anything about your heart health, your risk score, or general cardiovascular wellness.
+                Ask me anything about heart health — diet, exercise, symptoms, medications, or how to reduce your cardiovascular risk.
               </p>
+
+              <div className="flex flex-wrap justify-center gap-2 pt-4 max-w-xl">
+                {suggestedPrompts.map((prompt, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleSend(prompt)}
+                    className="px-4 py-2 rounded-full border border-primary/20 bg-white dark:bg-slate-800 text-primary text-xs font-semibold hover:bg-primary hover:text-white transition-all shadow-sm"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
             </motion.div>
           )}
 
@@ -291,7 +252,7 @@ const ChatbotPage: React.FC<ChatbotPageProps> = () => {
                 transition={{ duration: 0.3 }}
                 className={`flex gap-3 md:gap-4 max-w-[90%] md:max-w-[85%] ${msg.role === 'user' ? 'self-end flex-row-reverse' : ''}`}
               >
-                <div className={`size-8 md:size-10 rounded-full flex-shrink-0 flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-sm overflow-hidden ${msg.role === 'assistant' ? 'bg-red-100' : 'bg-primary'}`}>
+                <div className={`size-8 md:size-10 rounded-full flex-shrink-0 flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-sm ${msg.role === 'assistant' ? 'bg-red-100' : 'bg-primary'}`}>
                   {msg.role === 'assistant' ? (
                     <span className="material-symbols-outlined text-red-500 text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>smart_toy</span>
                   ) : (
@@ -304,7 +265,7 @@ const ChatbotPage: React.FC<ChatbotPageProps> = () => {
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                   </div>
                   <p className={`text-[9px] md:text-[10px] text-slate-400 font-medium ${msg.role === 'user' ? 'mr-1' : 'ml-1'}`}>
-                    {msg.role === 'assistant' ? 'HeartGuard AI' : 'You'} · {formatTime(msg.created_at)}
+                    {msg.role === 'assistant' ? 'Heart Health AI' : 'You'} · {formatTime(msg.created_at)}
                   </p>
                 </div>
               </motion.div>
@@ -332,21 +293,6 @@ const ChatbotPage: React.FC<ChatbotPageProps> = () => {
             </motion.div>
           )}
 
-          {/* Suggested prompts — show when empty */}
-          {!isLoading && messages.length === 0 && (
-            <div className="flex flex-wrap gap-2 pt-4">
-              {suggestedPrompts.map((prompt, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleSend(prompt)}
-                  className="px-3 md:px-4 py-1.5 md:py-2 rounded-full border border-primary/20 bg-white dark:bg-slate-800 text-primary text-[10px] md:text-xs font-semibold hover:bg-primary hover:text-white transition-all shadow-sm"
-                >
-                  {prompt}
-                </button>
-              ))}
-            </div>
-          )}
-
           <div ref={messagesEndRef} />
         </div>
 
@@ -355,7 +301,7 @@ const ChatbotPage: React.FC<ChatbotPageProps> = () => {
           <div className="relative bg-white dark:bg-slate-800 rounded-2xl md:rounded-3xl border border-primary/10 shadow-xl shadow-primary/5 p-1.5 md:p-2 flex items-center gap-1 md:gap-2 group focus-within:ring-2 ring-primary/20 transition-all">
             <input
               className="flex-1 border-none focus:ring-0 text-sm md:text-base bg-transparent placeholder:text-slate-400 py-3 md:py-4 px-2 outline-none"
-              placeholder="Describe your symptoms or ask a heart-health question..."
+              placeholder="Ask a heart health question..."
               type="text"
               value={inputText}
               onChange={e => setInputText(e.target.value)}
@@ -371,7 +317,7 @@ const ChatbotPage: React.FC<ChatbotPageProps> = () => {
             </button>
           </div>
           <p className="text-center text-[9px] md:text-[10px] text-slate-400 mt-3 font-medium uppercase tracking-widest hidden sm:block">
-            HeartGuard AI is for informational purposes. Always consult a doctor for medical emergencies.
+            For informational purposes only — always consult a doctor for medical advice.
           </p>
         </div>
       </main>
