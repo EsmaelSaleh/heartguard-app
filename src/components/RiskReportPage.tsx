@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { brandAssets } from '../data/mockData';
 import { useAuth } from '../context/AuthContext';
+import ThemeToggle from './ThemeToggle';
 
 export interface RiskReportPageProps {}
 
@@ -223,6 +224,7 @@ const RiskReportPage: React.FC<RiskReportPageProps> = () => {
           </div>
         </div>
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           <button
             onClick={() => navigate('/dashboard')}
             className="hidden md:flex items-center justify-center rounded-lg h-10 px-4 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"

@@ -4,6 +4,7 @@ import type { Variants } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { brandAssets } from '../data/mockData';
 import { useAuth } from '../context/AuthContext';
+import ThemeToggle from './ThemeToggle';
 
 export interface OnboardingWelcomePageProps {}
 
@@ -31,6 +32,7 @@ const OnboardingWelcomePage: React.FC<OnboardingWelcomePageProps> = () => {
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">HeartGuard</h2>
         </div>
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           <div className="hidden md:flex flex-col items-end">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Account</span>
             <span className="text-sm font-medium">{user?.full_name ?? user?.email ?? ''}</span>

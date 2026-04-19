@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { brandAssets, loginPageData } from '../data/mockData';
 import { useAuth } from '../context/AuthContext';
+import ThemeToggle from './ThemeToggle';
 
 export interface LoginPageProps {}
 
@@ -42,7 +43,10 @@ const LoginPage: React.FC<LoginPageProps> = () => {
   };
 
   return (
-    <div className="bg-[#FFFCFB] dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex items-center justify-center p-4 font-display">
+    <div className="bg-[#FFFCFB] dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex items-center justify-center p-4 font-display relative">
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
       <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-0 bg-white dark:bg-slate-900 rounded-xl shadow-xl overflow-hidden border border-slate-100 dark:border-slate-800">
 
         {/* Left Side: Login Form */}

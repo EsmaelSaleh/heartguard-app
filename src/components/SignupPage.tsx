@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { brandAssets, signupPageData } from '../data/mockData';
+import ThemeToggle from './ThemeToggle';
 
 export interface SignupPageProps {}
 
@@ -63,6 +64,7 @@ const SignupPage: React.FC<SignupPageProps> = () => {
           <h2 className="text-slate-900 dark:text-slate-100 text-2xl font-extrabold tracking-tight">HeartGuard</h2>
         </Link>
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           <span className="hidden sm:inline text-sm text-slate-500 dark:text-slate-400">Already have an account?</span>
           <Link to="/login" className="text-sm font-bold text-primary hover:underline">Login</Link>
         </div>

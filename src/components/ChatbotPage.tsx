@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { brandAssets } from '../data/mockData';
 import { useAuth } from '../context/AuthContext';
+import ThemeToggle from './ThemeToggle';
 
 interface Message {
   id?: string;
@@ -359,6 +360,7 @@ const ChatbotPage: React.FC = () => {
             <span className="material-symbols-outlined text-sm">chevron_left</span>
             <span className="hidden sm:inline">Dashboard</span>
           </button>
+          <ThemeToggle />
         </header>
 
         {/* Messages */}

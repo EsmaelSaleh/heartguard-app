@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { brandAssets } from '../data/mockData';
 import { useAuth } from '../context/AuthContext';
+import ThemeToggle from './ThemeToggle';
 
 export interface OnboardingBasicInfoPageProps {}
 
@@ -51,6 +52,7 @@ const OnboardingBasicInfoPage: React.FC<OnboardingBasicInfoPageProps> = () => {
             <h2 className="text-slate-900 dark:text-slate-100 text-2xl font-bold leading-tight tracking-tight">HeartGuard</h2>
           </div>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <span className="material-symbols-outlined text-slate-500 cursor-pointer hover:text-primary transition-colors">help_outline</span>
             <div className="size-10 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center">
               <span className="text-primary font-bold text-sm">{initials}</span>

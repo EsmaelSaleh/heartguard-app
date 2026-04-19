@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { brandAssets } from '../data/mockData';
 import { useAuth } from '../context/AuthContext';
+import ThemeToggle from './ThemeToggle';
 
 interface Assessment {
   id: string;
@@ -194,6 +195,7 @@ const DashboardPage: React.FC = () => {
           </nav>
 
           <div className="flex items-center gap-3 border-l border-slate-200 dark:border-slate-800 pl-6">
+            <ThemeToggle />
             <div className="flex flex-col items-end">
               <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{firstName}</span>
               <span className="text-xs text-slate-400">{user?.email}</span>

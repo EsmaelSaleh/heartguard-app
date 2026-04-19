@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { brandAssets } from '../data/mockData';
 import { useAuth } from '../context/AuthContext';
+import ThemeToggle from './ThemeToggle';
 
 export interface OnboardingMedicalHistoryPageProps {}
 
@@ -72,6 +73,7 @@ const OnboardingMedicalHistoryPage: React.FC<OnboardingMedicalHistoryPageProps> 
               </div>
               <h2 className="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-tight">HeartGuard</h2>
             </div>
+            <ThemeToggle />
             <div className="size-10 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center">
               <span className="text-primary font-bold text-sm">{initials}</span>
             </div>

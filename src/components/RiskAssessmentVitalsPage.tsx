@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { brandAssets } from '../data/mockData';
 import { useAuth } from '../context/AuthContext';
+import ThemeToggle from './ThemeToggle';
 
 export interface RiskAssessmentVitalsPageProps {}
 
@@ -83,6 +84,7 @@ const RiskAssessmentVitalsPage: React.FC<RiskAssessmentVitalsPageProps> = () => 
           <h2 className="text-slate-900 dark:text-slate-100 text-xl font-bold leading-tight tracking-tight">HeartGuard</h2>
         </div>
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           <div className="hidden md:block text-right">
             <p className="text-xs text-slate-500 font-medium">Clinically Verified</p>
             <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Assessment Portal</p>
