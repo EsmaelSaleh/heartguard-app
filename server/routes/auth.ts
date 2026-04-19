@@ -82,7 +82,7 @@ router.post('/signup', async (req: Request, res: Response): Promise<void> => {
       expires: expiresAt,
     });
 
-    res.status(201).json({ user: { id: user.id, email: user.email, full_name: user.full_name } });
+    res.status(201).json({ token, user: { id: user.id, email: user.email, full_name: user.full_name } });
   } catch (err) {
     console.error('Signup error:', err);
     res.status(500).json({ error: 'Failed to create account' });
@@ -126,7 +126,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       expires: expiresAt,
     });
 
-    res.json({ user: { id: user.id, email: user.email, full_name: user.full_name } });
+    res.json({ token, user: { id: user.id, email: user.email, full_name: user.full_name } });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Failed to log in' });
@@ -135,7 +135,13 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
 
 // POST /api/auth/logout
 router.post('/logout', async (req: Request, res: Response): Promise<void> => {
-  const token = req.cookies?.session_token;
+  let token = req.cookies?.session_token;
+  if (!token) {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.slice(7).trim();
+    }
+  }
   if (token) {
     await pool.query('DELETE FROM sessions WHERE token = $1', [token]).catch(() => {});
   }

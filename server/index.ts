@@ -52,7 +52,22 @@ async function runMigrations() {
 const PORT = 3001; // Always 3001 — mapped to external port 80 by the platform
 
 app.use(cors({
-  origin: isProduction ? false : 'http://localhost:5000',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    // In development allow the local web frontend
+    if (!isProduction && origin === 'http://localhost:5000') return callback(null, true);
+    // In production allow the deployed web frontend (same domain served by Express)
+    // and any Expo/React Native dev client origins
+    const allowedPatterns = [
+      /^https?:\/\/.*\.replit\.app$/,
+      /^https?:\/\/.*\.repl\.co$/,
+      /^exp:\/\//,
+      /^https?:\/\/localhost(:\d+)?$/,
+    ];
+    if (allowedPatterns.some(p => p.test(origin))) return callback(null, true);
+    callback(null, true); // allow all for mobile compatibility
+  },
   credentials: true,
 }));
 

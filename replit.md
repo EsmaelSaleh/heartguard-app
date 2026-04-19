@@ -9,7 +9,8 @@ A cardiac risk assessment web application built with React + Vite + TypeScript +
 - **Styling**: Tailwind CSS v3 + Framer Motion animations
 - **Routing**: React Router DOM v7
 - **Database**: Replit PostgreSQL (connection via `DATABASE_URL` env var)
-- **Auth**: httpOnly cookie sessions (30-day expiry), bcrypt (12 rounds)
+- **Auth**: httpOnly cookie sessions (30-day expiry), bcrypt (12 rounds). Also supports `Authorization: Bearer <token>` header for mobile clients.
+- **Mobile support**: CORS allows all origins (including no-origin mobile requests). Login/signup return `token` in JSON body alongside the cookie so mobile apps can store and send the token manually.
 
 ## User Flow
 

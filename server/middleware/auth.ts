@@ -6,7 +6,14 @@ export interface AuthRequest extends Request {
 }
 
 export async function requireAuth(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
-  const token = req.cookies?.session_token;
+  // Accept token from cookie (web) or Authorization: Bearer <token> header (mobile)
+  let token = req.cookies?.session_token;
+  if (!token) {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.slice(7).trim();
+    }
+  }
 
   if (!token) {
     res.status(401).json({ error: 'Unauthorized' });
