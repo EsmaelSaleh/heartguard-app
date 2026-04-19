@@ -17,10 +17,12 @@ router.post('/', requireAuth, upload.single('file'), async (req: AuthRequest, re
     return;
   }
 
-  if (!req.file) {
-    res.status(400).json({ error: 'An ECG image is required to run the assessment.' });
-    return;
-  }
+  // Minimal 1×1 white PNG used as placeholder when no ECG is uploaded
+  const BLANK_PNG = Buffer.from(
+    '89504e470d0a1a0a0000000d49484452000000010000000108020000009001' +
+    '2e00000000c4944415478016360f8cf000000020001e221bc330000000049454e44ae426082',
+    'hex'
+  );
 
   const vitals = {
     cholesterol: Number(cholesterol),
@@ -68,9 +70,9 @@ router.post('/', requireAuth, upload.single('file'), async (req: AuthRequest, re
     };
 
     // Build multipart request for the AI endpoint
-    const fileBuffer = req.file.buffer;
-    const fileName = req.file.originalname;
-    const mimeType = req.file.mimetype;
+    const fileBuffer = req.file?.buffer ?? BLANK_PNG;
+    const fileName = req.file?.originalname ?? 'blank.png';
+    const mimeType = req.file?.mimetype ?? 'image/png';
 
     const formData = new FormData();
     formData.append('file', new Blob([fileBuffer], { type: mimeType }), fileName);
