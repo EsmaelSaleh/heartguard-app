@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "rNsAkQFhXz_qMwqrhBb9e"
+uri = "file://heartguard-screenshots.zip"
+type = "unspecified"
+title = "HeartGuard — All Screen Screenshots"

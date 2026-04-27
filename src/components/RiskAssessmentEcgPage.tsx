@@ -36,7 +36,9 @@ const RiskAssessmentEcgPage: React.FC<RiskAssessmentEcgPageProps> = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const vitals: Vitals | undefined = location.state?.vitals;
+  const isDemo = new URLSearchParams(window.location.search).has('demo');
+  const demoVitals: Vitals = { cholesterol: 218, bmi: 27.4, heart_rate: 74, glucose: 98, pulse_pressure: 48 };
+  const vitals: Vitals | undefined = location.state?.vitals ?? (isDemo ? demoVitals : undefined);
 
   useEffect(() => {
     if (!vitals) {

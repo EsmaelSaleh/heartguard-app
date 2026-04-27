@@ -14,6 +14,8 @@ const ThemeContext = createContext<ThemeContextValue>({
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
+    // Allow ?dark URL param to force dark mode (used for screenshots)
+    if (new URLSearchParams(window.location.search).has('dark')) return 'dark';
     const stored = localStorage.getItem('hg-theme') as Theme | null;
     if (stored === 'dark' || stored === 'light') return stored;
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
