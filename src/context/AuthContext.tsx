@@ -22,12 +22,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Demo mode: skip API call and return a fake user for screenshots
-    if (new URLSearchParams(window.location.search).has('demo')) {
-      setUser({ id: 'demo-user', email: 'esmael@heartguard.io', full_name: 'Esmael Saleh' });
-      setLoading(false);
-      return;
-    }
     fetch('/api/auth/me', { credentials: 'include' })
       .then(res => (res.ok ? res.json() : null))
       .then(data => {

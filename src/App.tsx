@@ -14,7 +14,6 @@ import RiskAssessmentEcgPage from './components/RiskAssessmentEcgPage';
 import DashboardPage from './components/DashboardPage';
 import RiskReportPage from './components/RiskReportPage';
 import ChatbotPage from './components/ChatbotPage';
-import MobilePreviewPage from './components/MobilePreviewPage';
 
 function LoadingSpinner() {
   return (
@@ -55,7 +54,6 @@ function AppRoutes() {
       <Route path="/dashboard-results" element={<Navigate to="/dashboard" replace />} />
       <Route path="/risk-report" element={<ProtectedRoute><RiskReportPage /></ProtectedRoute>} />
       <Route path="/chatbot" element={<ProtectedRoute><ChatbotPage /></ProtectedRoute>} />
-      <Route path="/mobile-preview" element={<MobilePreviewPage />} />
       <Route path="*" element={<GuestRoute><LandingPage /></GuestRoute>} />
     </Routes>
   );
