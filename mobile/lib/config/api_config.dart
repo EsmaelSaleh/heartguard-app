@@ -4,6 +4,12 @@ class ApiConfig {
   // PRODUCTION — always online (use after deploying on Replit)
   // static const String baseUrl = 'https://YOUR-APP-NAME.replit.app';
 
-  // DEVELOPMENT — only online while Replit tab is open
-  static const String baseUrl = 'https://da30bb75-c676-4cde-a91e-1643b6c635e6-00-1txykxoxtkfu6.picard.replit.dev';
+  // LOCALHOST (iOS Simulator or Web)
+  static const String baseUrl = 'http://localhost:3001';
+
+  // ANDROID EMULATOR (Uncomment to use)
+  // static const String baseUrl = 'http://10.0.2.2:3001';
+
+  // PHYSICAL DEVICE (Uncomment and replace with your computer's local IP)
+  // static const String baseUrl = 'http://192.168.1.100:3001';
 }
