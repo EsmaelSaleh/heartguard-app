@@ -20,6 +20,9 @@ async function runMigrations() {
   try {
     await pool.query(`
       ALTER TABLE risk_assessments
+        ADD COLUMN IF NOT EXISTS ecg_file_url       TEXT,
+        ADD COLUMN IF NOT EXISTS risk_score         INT,
+        ADD COLUMN IF NOT EXISTS risk_level         VARCHAR(20),
         ADD COLUMN IF NOT EXISTS ecg_classification TEXT,
         ADD COLUMN IF NOT EXISTS tabular_risk       NUMERIC(6,4),
         ADD COLUMN IF NOT EXISTS combined_risk_score NUMERIC(6,4),

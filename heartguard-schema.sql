@@ -84,6 +84,9 @@ CREATE TABLE risk_assessments (
     glucose             NUMERIC(6,2),
     pulse_pressure      NUMERIC(6,2),
     -- AI outputs (Step 2 – ECG Analysis)
+    ecg_file_url        TEXT,
+    risk_score          INT,
+    risk_level          VARCHAR(20),
     ecg_classification  TEXT,
     tabular_risk        NUMERIC(5,4),
     combined_risk_score NUMERIC(5,4),
