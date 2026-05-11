@@ -64,7 +64,7 @@ class LandingScreen extends StatelessWidget {
                 Icon(LucideIcons.sparkles, size: 16, color: AppTheme.primary),
                 SizedBox(width: 8),
                 Text(
-                  'Now powered by GPT-4 Medical Analysis',
+                  'Now powered by Qwen2.5 72B Instruct for Medical Analysis',
                   style: TextStyle(
                     color: AppTheme.primary,
                     fontWeight: FontWeight.bold,
