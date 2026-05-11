@@ -96,8 +96,14 @@ if (isProduction) {
   });
 }
 
-runMigrations().then(() => {
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`HeartGuard API running on port ${PORT} (${isProduction ? 'production' : 'development'})`);
+// If running on Vercel, export the app as a serverless function.
+// Otherwise, run migrations and start the server locally.
+if (!process.env.VERCEL) {
+  runMigrations().then(() => {
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`HeartGuard API running on port ${PORT} (${isProduction ? 'production' : 'development'})`);
+    });
   });
-});
+}
+
+export default app;
