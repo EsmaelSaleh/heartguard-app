@@ -1,6 +1,6 @@
 # HeartGuard Backend Architecture Guide
 
-This guide is designed to help students understand the backend architecture of the HeartGuard application. It covers the data flow, database structure, file roles, and how the backend acts as the central nervous system connecting the frontend, mobile app, and AI models.
+This guide is designed to help you understand the backend architecture of the HeartGuard application. It covers the data flow, database structure, file roles, and how the backend acts as the central nervous system connecting the frontend, mobile app, and AI models.
 
 ---
 
@@ -79,7 +79,7 @@ This is the most complex file in the project.
 
 ## 4. Authentication Flow (Register & Login Example)
 
-To help students understand how data moves from the user's screen into the database, let's trace the Registration and Login flows.
+To help you understand how data moves from the user's screen into the database, let's trace the Registration and Login flows.
 
 ### Example A: Registration (Sign Up)
 1. **Frontend Input:** The user types their `email`, `password`, and `full_name` into the React/Flutter form and clicks "Sign Up".
@@ -116,8 +116,8 @@ The backend acts as the secure intermediary. If the frontend talked directly to 
 
 ---
 
-## 6. Summary for Students
-When explaining this to students, emphasize the concept of **Separation of Concerns**:
+## 6. Summary
+As you study this architecture, emphasize the concept of **Separation of Concerns**:
 1. **The Database** strictly stores information.
 2. **The AI** strictly analyzes information.
 3. **The Frontend/Mobile** strictly displays information.
